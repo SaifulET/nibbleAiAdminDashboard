@@ -7,7 +7,7 @@ import { UserProfileData } from "@/types/settings.types";
 interface PersonalInfoViewProps {
   onBack: () => void;
   initialProfile?: UserProfileData;
-  onSaveProfile?: (updatedProfile: UserProfileData) => void;
+  onSaveProfile?: (updatedProfile: UserProfileData, avatarFile?: File | null) => void | Promise<void>;
 }
 
 const countryCodes = [
@@ -129,10 +129,10 @@ const renderFlagIcon = (code: string) => {
 export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
   onBack,
   initialProfile = {
-    name: "Tamim",
-    email: "gddvc@gmail.com",
-    countryCode: "+1242",
-    phoneNumber: "5735353",
+    name: "Admin",
+    email: "",
+    countryCode: "+1",
+    phoneNumber: "",
     role: "Admin",
   },
   onSaveProfile,
@@ -140,26 +140,40 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState<UserProfileData>(initialProfile);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [savedSuccessMsg, setSavedSuccessMsg] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const previewUrl = URL.createObjectURL(file);
       setAvatarPreview(previewUrl);
+      setAvatarFile(file);
       setProfile((prev) => ({ ...prev, avatarUrl: previewUrl }));
     }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsEditing(false);
-    setSavedSuccessMsg(true);
-    if (onSaveProfile) onSaveProfile(profile);
+    setSaveError("");
+    setIsSaving(true);
 
-    setTimeout(() => {
-      setSavedSuccessMsg(false);
-    }, 4000);
+    try {
+      await onSaveProfile?.(profile, avatarFile);
+      setAvatarFile(null);
+      setIsEditing(false);
+      setSavedSuccessMsg(true);
+
+      window.setTimeout(() => {
+        setSavedSuccessMsg(false);
+      }, 4000);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Profile update failed.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -198,11 +212,12 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
 
         {isEditing ? (
           <button
-            type="button"
-            onClick={handleSave}
-            className="h-[44px] px-6 bg-[#3E3EDF] hover:bg-[#3232C7] text-white font-medium rounded-[8px] shadow-md transition-colors cursor-pointer"
+            type="submit"
+            form="personal-info-form"
+            disabled={isSaving}
+            className="h-[44px] px-6 bg-[#3E3EDF] hover:bg-[#3232C7] disabled:opacity-60 text-white font-medium rounded-[8px] shadow-md transition-colors cursor-pointer"
           >
-            Save Change
+            {isSaving ? "Saving..." : "Save Change"}
           </button>
         ) : (
           <button
@@ -256,8 +271,15 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
         </div>
       )}
 
+      {saveError && (
+        <div className="w-full rounded-[8px] border border-red-100 bg-red-50 px-4 py-3 text-[14px] font-medium text-red-600">
+          {saveError}
+        </div>
+      )}
+
       {/* Main 2-Column Content */}
       <form
+        id="personal-info-form"
         onSubmit={handleSave}
         className="w-full flex flex-col md:flex-row gap-8 items-start pt-2"
       >
@@ -276,6 +298,7 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
                   alt="Profile Avatar"
                   fill
                   className="object-cover"
+                  unoptimized
                 />
               ) : (
                 <span className="select-none">
@@ -308,6 +331,7 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
                   alt="Profile Avatar"
                   fill
                   className="object-cover"
+                  unoptimized
                 />
               ) : (
                 <span className="select-none">
@@ -353,12 +377,10 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
             <div className="w-full h-[56px] px-4 bg-[#FEFEFE] border border-[#3E3EDF] rounded-[8px] flex items-center focus-within:border-[#3E3EDF]">
               <input
                 type="email"
-                disabled={!isEditing}
+                disabled
                 value={profile.email}
-                onChange={(e) =>
-                  setProfile({ ...profile, email: e.target.value })
-                }
-                className="w-full bg-transparent outline-none text-[16px] text-[#1F1D1D] disabled:opacity-90"
+                readOnly
+                className="w-full bg-transparent outline-none text-[16px] text-[#1F1D1D] disabled:opacity-70"
               />
             </div>
           </div>

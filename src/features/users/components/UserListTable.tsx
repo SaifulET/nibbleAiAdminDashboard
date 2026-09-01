@@ -4,6 +4,7 @@ import React from "react";
 import { UserDetail } from "@/types/users.types";
 import { UserFilterBar } from "./UserFilterBar";
 import { PaginationBar } from "@/features/earnings/components/PaginationBar";
+import { useClientPagination } from "@/hooks/useClientPagination";
 
 interface UserListTableProps {
   users?: UserDetail[];
@@ -11,91 +12,16 @@ interface UserListTableProps {
 }
 
 export const UserListTable: React.FC<UserListTableProps> = ({
-  users = [
-    {
-      id: "1",
-      sl: "1",
-      userName: "Tamim",
-      email: "fzaaaaa@gmail.com",
-      phoneNumber: "(+33)6 55 53 38 10",
-      joiningDate: "16 Apr 2024",
-      address: "South Dakota 83475",
-    },
-    {
-      id: "2",
-      sl: "1",
-      userName: "Tamim",
-      email: "dric@gmail.com",
-      phoneNumber: "(+33)7 00 55 55 11",
-      joiningDate: "16 Apr 2024",
-      address: "South Dakota 83475",
-    },
-    {
-      id: "3",
-      sl: "1",
-      userName: "Tamim",
-      email: "ziar@gmail.com",
-      phoneNumber: "(+33)6 55 52 17 33",
-      joiningDate: "16 Apr 2024",
-      address: "South Dakota 83475",
-    },
-    {
-      id: "4",
-      sl: "1",
-      userName: "Tamim",
-      email: "xeno@yandex.ru",
-      phoneNumber: "(+33)7 35 5 46 14",
-      joiningDate: "16 Apr 2024",
-      address: "South Dakota 83475",
-    },
-    {
-      id: "5",
-      sl: "1",
-      userName: "Tamim",
-      email: "zitka@mail.ru",
-      phoneNumber: "(+33)7 35 55 21 02",
-      joiningDate: "16 Apr 2024",
-      address: "South Dakota 83475",
-    },
-    {
-      id: "6",
-      sl: "1",
-      userName: "Tamim",
-      email: "bertou@yandex.ru",
-      phoneNumber: "(+33)7 35 55 45 43",
-      joiningDate: "16 Apr 2024",
-      address: "South Dakota 83475",
-    },
-    {
-      id: "7",
-      sl: "1",
-      userName: "Tamim",
-      email: "rrian@yandex.ru",
-      phoneNumber: "(+33)7 75 55 65 33",
-      joiningDate: "16 Apr 2024",
-      address: "South Dakota 83475",
-    },
-    {
-      id: "8",
-      sl: "1",
-      userName: "Tamim",
-      email: "hamli@gmail.com",
-      phoneNumber: "(+33)7 00 55 56 79",
-      joiningDate: "16 Apr 2024",
-      address: "South Dakota 83475",
-    },
-    {
-      id: "9",
-      sl: "1",
-      userName: "Tamim",
-      email: "xterris@gmail.com",
-      phoneNumber: "(+33)7 55 55 33 70",
-      joiningDate: "16 Apr 2024",
-      address: "South Dakota 83475",
-    },
-  ],
+  users = [],
   onViewUser,
 }) => {
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems,
+    setPage,
+  } = useClientPagination(users, 10);
+
   return (
     <div className="w-full bg-[#FEFEFE] rounded-[8px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] p-4 sm:p-6 flex flex-col gap-6 overflow-hidden">
       {/* Top Header: Title + Pill Filter Bar */}
@@ -124,7 +50,7 @@ export const UserListTable: React.FC<UserListTableProps> = ({
 
           {/* Table Body */}
           <tbody className="font-inter text-[14px] text-[#575757]">
-            {users.map((usr) => (
+            {paginatedItems.length ? paginatedItems.map((usr) => (
               <tr
                 key={usr.id}
                 className="h-[52px] border-b border-gray-100 hover:bg-gray-50 transition-colors"
@@ -157,13 +83,23 @@ export const UserListTable: React.FC<UserListTableProps> = ({
                   </button>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr className="h-[72px] border-b border-gray-100">
+                <td colSpan={6} className="px-6 py-5 text-center text-[#777777]">
+                  No users returned from the backend.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Pagination Bar */}
-      <PaginationBar />
+      <PaginationBar
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
     </div>
   );
 };

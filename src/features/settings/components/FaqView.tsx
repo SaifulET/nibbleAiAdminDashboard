@@ -8,118 +8,41 @@ interface FaqViewProps {
 }
 
 export const FaqView: React.FC<FaqViewProps> = ({ onBack }) => {
-  const [faqs, setFaqs] = useState<FaqItem[]>([
-    {
-      id: "1",
-      question: "Where can I find ongoing offers and deals?",
-      answer: "Can I use the app offline inside a store?",
-    },
-    {
-      id: "2",
-      question: "What should I do if a QR code doesn't scan properly?",
-      answer: "Make sure your camera lens is clean and your device is connected to the internet. If the issue persists, try restarting the app.",
-    },
-    {
-      id: "3",
-      question: "How do I contact support if I face a problem?",
-      answer: "You can reach out to our support team via the Support section in the sidebar or send an email to support@nibblai.com.",
-    },
-    {
-      id: "4",
-      question: "Is my personal information safe?",
-      answer: "Yes, all your personal information is stored securely with enterprise-grade encryption.",
-    },
-  ]);
+  const [isEditingFaq, setIsEditingFaq] = useState(false);
+  const [selectedFaq, setSelectedFaq] = useState<FaqItem | null>(null);
+  const [error, setError] = useState("");
 
-  const [openId, setOpenId] = useState<string | null>("1");
-  const [activeFormState, setActiveFormState] = useState<
-    "list" | "add" | "edit"
-  >("list");
-  const [editingFaq, setEditingFaq] = useState<FaqItem | null>(null);
-
-  const handleToggle = (id: string) => {
-    setOpenId(openId === id ? null : id);
-  };
-
-  const handleDelete = (id: string) => {
-    setFaqs(faqs.filter((item) => item.id !== id));
-  };
-
-  const handleEditClick = (faq: FaqItem) => {
-    setEditingFaq(faq);
-    setActiveFormState("edit");
-  };
-
-  const handleConfirmForm = (data: {
-    question: string;
-    answer: string;
-    id?: string;
-  }) => {
-    if (data.id) {
-      // Edit existing
-      setFaqs(
-        faqs.map((item) =>
-          item.id === data.id
-            ? { ...item, question: data.question, answer: data.answer }
-            : item
-        )
-      );
-    } else {
-      // Add new
-      const newFaq: FaqItem = {
-        id: Date.now().toString(),
-        question: data.question,
-        answer: data.answer,
-      };
-      setFaqs([...faqs, newFaq]);
-      setOpenId(newFaq.id);
-    }
-    setActiveFormState("list");
-    setEditingFaq(null);
-  };
-
-  if (activeFormState === "add") {
-    return (
-      <AddFaqForm
-        onBack={() => setActiveFormState("list")}
-        onConfirm={handleConfirmForm}
-      />
+  const handleSubmitFaq = () => {
+    setError(
+      "FAQ cannot be saved yet because the backend has no FAQ management API. Required: GET/POST /api/v1/admin/faqs/ and PATCH/DELETE /api/v1/admin/faqs/{faq_id}/."
     );
-  }
+    setIsEditingFaq(false);
+    setSelectedFaq(null);
+  };
 
-  if (activeFormState === "edit" && editingFaq) {
+  if (isEditingFaq) {
     return (
       <AddFaqForm
-        initialFaq={editingFaq}
+        initialFaq={selectedFaq}
         onBack={() => {
-          setActiveFormState("list");
-          setEditingFaq(null);
+          setIsEditingFaq(false);
+          setSelectedFaq(null);
         }}
-        onConfirm={handleConfirmForm}
+        onConfirm={handleSubmitFaq}
       />
     );
   }
 
   return (
     <div className="w-full flex flex-col gap-6 font-inter">
-      {/* Top Header Row */}
-      <div className="w-full flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={onBack}
             className="text-[#1F1D1D] hover:text-[#3E3EDF] transition-colors cursor-pointer"
           >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="19" y1="12" x2="5" y2="12" />
               <polyline points="12 19 5 12 12 5" />
             </svg>
@@ -128,79 +51,27 @@ export const FaqView: React.FC<FaqViewProps> = ({ onBack }) => {
             FAQ
           </h2>
         </div>
-
-        {/* Add New FAQ Button */}
         <button
           type="button"
-          onClick={() => setActiveFormState("add")}
-          className="h-[44px] px-6 bg-[#3E3EDF] hover:bg-[#3232C7] text-white font-medium rounded-[8px] shadow-md transition-colors cursor-pointer"
+          onClick={() => {
+            setError("");
+            setSelectedFaq(null);
+            setIsEditingFaq(true);
+          }}
+          className="h-[44px] rounded-[8px] bg-[#3E3EDF] px-6 text-[15px] font-medium text-white shadow-md transition-colors hover:bg-[#3232C7]"
         >
-          Add New FAQ
+          Add FAQ
         </button>
       </div>
 
-      {/* FAQ Cards List */}
-      <div className="w-full flex flex-col gap-4">
-        {faqs.map((faq) => {
-          const isOpen = openId === faq.id;
-          return (
-            <div
-              key={faq.id}
-              className="w-full bg-[#FEFEFE] border border-gray-100 rounded-[12px] shadow-[0px_2px_8px_rgba(0,0,0,0.06)] overflow-hidden transition-all"
-            >
-              {/* Question Header */}
-              <button
-                type="button"
-                onClick={() => handleToggle(faq.id)}
-                className="w-full p-5 flex items-center justify-between text-left font-medium text-[16px] text-[#1F1D1D] hover:text-[#3E3EDF] transition-colors cursor-pointer"
-              >
-                <span>{faq.question}</span>
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className={`transition-transform duration-200 shrink-0 ${
-                    isOpen ? "rotate-180 text-[#3E3EDF]" : "text-gray-400"
-                  }`}
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
+      {error && (
+        <div className="rounded-[8px] border border-red-100 bg-red-50 px-4 py-3 text-[14px] font-medium text-red-600">
+          {error}
+        </div>
+      )}
 
-              {/* Answer & Actions when expanded */}
-              {isOpen && (
-                <div className="px-5 pb-5 pt-1 border-t border-gray-50 flex flex-col gap-4">
-                  <p className="text-[14px] text-[#575757] leading-[160%] whitespace-pre-line">
-                    {faq.answer}
-                  </p>
-
-                  {/* Action Buttons: Delete & Edit */}
-                  <div className="w-full flex justify-end gap-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(faq.id)}
-                      className="px-4 py-1.5 border border-[#FF5C5C] text-[#FF5C5C] hover:bg-[#FF5C5C]/10 rounded-[4px] text-[13px] font-medium transition-colors cursor-pointer"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleEditClick(faq)}
-                      className="px-4 py-1.5 border border-[#3E3EDF] text-[#3E3EDF] hover:bg-[#3E3EDF]/10 rounded-[4px] text-[13px] font-medium transition-colors cursor-pointer"
-                    >
-                      Edit
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <div className="rounded-[12px] border border-gray-100 bg-white p-6 text-center text-[15px] leading-6 text-[#575757] shadow-[0px_2px_8px_rgba(0,0,0,0.06)]">
+        No FAQ records returned because the backend does not provide FAQ list endpoints yet.
       </div>
     </div>
   );

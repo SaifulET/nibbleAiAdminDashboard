@@ -14,17 +14,9 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
   onClose,
   user,
 }) => {
-  if (!isOpen) return null;
+  if (!isOpen || !user) return null;
 
-  const data: UserDetail = user || {
-    id: "1",
-    sl: "1",
-    userName: "Tamim",
-    email: "abc@gmail.com",
-    phoneNumber: "+7397386837",
-    address: "South Dakota 83475",
-    joiningDate: "29 Jun 2025",
-  };
+  const data: UserDetail = user;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
@@ -83,7 +75,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({
           <div className="flex items-center justify-between py-3.5 border-b border-[#3E3EDF]">
             <span className="font-medium text-[#1F1D1D]">Address :</span>
             <span className="font-poppins text-[#171717]">
-              {data.address || "South Dakota 83475"}
+              {data.address || "Not returned"}
             </span>
           </div>
 

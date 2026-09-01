@@ -3,6 +3,7 @@
 import React from "react";
 import { WithdrawRequestDetail } from "@/types/withdraw-request.types";
 import { PaginationBar } from "@/features/earnings/components/PaginationBar";
+import { useClientPagination } from "@/hooks/useClientPagination";
 
 interface WithdrawRequestTableProps {
   requests?: WithdrawRequestDetail[];
@@ -10,118 +11,16 @@ interface WithdrawRequestTableProps {
 }
 
 export const WithdrawRequestTable: React.FC<WithdrawRequestTableProps> = ({
-  requests = [
-    {
-      id: "1",
-      sl: "1",
-      userName: "Enrique",
-      providerName: "Tamim",
-      bankName: "Brac Bank",
-      branchName: "abc branch",
-      accountType: "Savings",
-      accountNumber: "12345678",
-      withdrawAmount: "$250",
-      status: "Approved",
-    },
-    {
-      id: "2",
-      sl: "1",
-      userName: "Enrique",
-      providerName: "Tamim",
-      bankName: "Brac Bank",
-      branchName: "abc branch",
-      accountType: "Savings",
-      accountNumber: "12345678",
-      withdrawAmount: "$250",
-      status: "Pending",
-    },
-    {
-      id: "3",
-      sl: "1",
-      userName: "Enrique",
-      providerName: "Tamim",
-      bankName: "Brac Bank",
-      branchName: "abc branch",
-      accountType: "Savings",
-      accountNumber: "12345678",
-      withdrawAmount: "$250",
-      status: "Cancelled",
-    },
-    {
-      id: "4",
-      sl: "1",
-      userName: "Enrique",
-      providerName: "Tamim",
-      bankName: "Brac Bank",
-      branchName: "abc branch",
-      accountType: "Savings",
-      accountNumber: "12345678",
-      withdrawAmount: "$250",
-      status: "Approved",
-    },
-    {
-      id: "5",
-      sl: "1",
-      userName: "Enrique",
-      providerName: "Tamim",
-      bankName: "Brac Bank",
-      branchName: "abc branch",
-      accountType: "Savings",
-      accountNumber: "12345678",
-      withdrawAmount: "$250",
-      status: "Approved",
-    },
-    {
-      id: "6",
-      sl: "1",
-      userName: "Enrique",
-      providerName: "Tamim",
-      bankName: "Brac Bank",
-      branchName: "abc branch",
-      accountType: "Savings",
-      accountNumber: "12345678",
-      withdrawAmount: "$250",
-      status: "Approved",
-    },
-    {
-      id: "7",
-      sl: "1",
-      userName: "Enrique",
-      providerName: "Tamim",
-      bankName: "Brac Bank",
-      branchName: "abc branch",
-      accountType: "Savings",
-      accountNumber: "12345678",
-      withdrawAmount: "$250",
-      status: "Approved",
-    },
-    {
-      id: "8",
-      sl: "1",
-      userName: "Enrique",
-      providerName: "Tamim",
-      bankName: "Brac Bank",
-      branchName: "abc branch",
-      accountType: "Savings",
-      accountNumber: "12345678",
-      withdrawAmount: "$250",
-      status: "Approved",
-    },
-    {
-      id: "9",
-      sl: "1",
-      userName: "Enrique",
-      providerName: "Tamim",
-      bankName: "Brac Bank",
-      branchName: "abc branch",
-      accountType: "Savings",
-      accountNumber: "12345678",
-      withdrawAmount: "$250",
-      status: "Approved",
-    },
-  ],
+  requests = [],
   onViewRequest,
 }) => {
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems,
+    setPage,
+  } = useClientPagination(requests, 10);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Approved":
@@ -163,7 +62,7 @@ export const WithdrawRequestTable: React.FC<WithdrawRequestTableProps> = ({
 
           {/* Table Body */}
           <tbody className="font-inter text-[14px] text-[#575757]">
-            {requests.map((req) => (
+            {paginatedItems.length ? paginatedItems.map((req) => (
               <tr
                 key={req.id}
                 className="h-[52px] border-b border-gray-100 hover:bg-gray-50 transition-colors"
@@ -204,13 +103,23 @@ export const WithdrawRequestTable: React.FC<WithdrawRequestTableProps> = ({
                   </button>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr className="h-[72px] border-b border-gray-100">
+                <td colSpan={8} className="px-6 py-5 text-center text-[#777777]">
+                  No withdrawal requests returned from the backend.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
       {/* Pagination Bar */}
-      <PaginationBar />
+      <PaginationBar
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
     </div>
   );
 };

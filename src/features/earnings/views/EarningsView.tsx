@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Sidebar } from "@/features/dashboard/components/Sidebar";
 import { Header } from "@/features/dashboard/components/Header";
 import { StatsCards } from "@/features/dashboard/components/StatsCards";
@@ -9,6 +9,7 @@ import { TransactionDetailsModal } from "../components/TransactionDetailsModal";
 import { TransactionDetail } from "@/types/earnings.types";
 import { SidebarNavItem } from "@/types/dashboard.types";
 import { useRouter } from "next/navigation";
+import { useAdminApiStore } from "@/stores/useAdminApiStore";
 
 export const EarningsView = () => {
   const router = useRouter();
@@ -16,6 +17,11 @@ export const EarningsView = () => {
     useState<TransactionDetail | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { profile, stats, transactions, loadDashboard, logout } = useAdminApiStore();
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
 
   const handleNavSelect = (item: SidebarNavItem) => {
     switch (item) {
@@ -41,6 +47,7 @@ export const EarningsView = () => {
         router.push("/support");
         break;
       case "logout":
+        logout();
         router.push("/");
         break;
       default:
@@ -67,17 +74,22 @@ export const EarningsView = () => {
       <main className="flex-1 w-full min-h-screen p-4 sm:p-6 md:p-8 flex flex-col gap-6 items-stretch bg-[#FEFEFE] overflow-x-hidden">
         {/* Header */}
         <Header
-          adminName="Tamim"
-          adminRole="Admin"
-          unreadCount={2}
+          adminName={String(profile?.full_name || profile?.email || "Admin")}
+          adminRole={String(profile?.role || "Admin")}
+          unreadCount={0}
           onToggleMobileMenu={() => setIsMobileMenuOpen(true)}
+          onNotificationClick={() => router.push("/support")}
+          onProfileClick={() => router.push("/settings")}
         />
 
         {/* Stats Cards */}
-        <StatsCards />
+        <StatsCards stats={stats} />
 
         {/* Earnings Table with Filter & Pagination */}
-        <EarningsTable onViewTransaction={handleOpenModal} />
+        <EarningsTable
+          transactions={transactions}
+          onViewTransaction={handleOpenModal}
+        />
       </main>
 
       {/* Transaction Details Modal */}

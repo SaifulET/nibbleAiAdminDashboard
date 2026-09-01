@@ -7,13 +7,17 @@ interface HeaderProps {
   adminRole?: string;
   unreadCount?: number;
   onToggleMobileMenu?: () => void;
+  onNotificationClick?: () => void;
+  onProfileClick?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  adminName = "Tamim",
+  adminName = "Admin",
   adminRole = "Admin",
-  unreadCount = 2,
+  unreadCount = 0,
   onToggleMobileMenu,
+  onNotificationClick,
+  onProfileClick,
 }) => {
   return (
     <header className="w-full min-h-[78px] bg-white rounded-[16px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] px-4 sm:px-6 py-3 flex items-center justify-between gap-4 shrink-0 flex-wrap sm:flex-nowrap">
@@ -57,7 +61,12 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Right Controls: Notifications & Profile */}
       <div className="flex items-center gap-4 sm:gap-6 ml-auto">
         {/* Notification Bell */}
-        <div className="relative cursor-pointer">
+        <button
+          type="button"
+          onClick={onNotificationClick}
+          className="relative cursor-pointer focus:outline-none"
+          title="Open support"
+        >
           <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#E0E0E0] flex items-center justify-center transition-colors hover:bg-[#D5D5D5]">
             <svg
               width="22"
@@ -78,10 +87,15 @@ export const Header: React.FC<HeaderProps> = ({
               {unreadCount}
             </span>
           )}
-        </div>
+        </button>
 
         {/* Profile Avatar & Info */}
-        <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onProfileClick}
+          className="flex items-center gap-3 rounded-[10px] p-1 transition-colors hover:bg-[#3E3EDF]/5 focus:outline-none"
+          title="Open settings"
+        >
           {/* Avatar Circle */}
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-[#3E3EDF] bg-gradient-to-br from-[#3E3EDF]/20 to-[#3E3EDF]/40 flex items-center justify-center font-inter font-semibold text-[#3E3EDF] text-base sm:text-lg overflow-hidden shrink-0">
             {adminName.slice(0, 2).toUpperCase()}
@@ -95,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({
               {adminRole}
             </span>
           </div>
-        </div>
+        </button>
       </div>
     </header>
   );

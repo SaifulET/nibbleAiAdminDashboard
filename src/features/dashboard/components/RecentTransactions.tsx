@@ -1,58 +1,26 @@
 "use client";
 
 import React from "react";
-import { Transaction } from "@/types/dashboard.types";
+import { TransactionDetail } from "@/types/earnings.types";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { PaginationBar } from "@/features/earnings/components/PaginationBar";
 
 interface RecentTransactionsProps {
-  transactions?: Transaction[];
-  onViewTransaction?: (id: string) => void;
+  transactions?: TransactionDetail[];
+  onViewTransaction?: (transaction: TransactionDetail) => void;
 }
 
 export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
-  transactions = [
-    {
-      id: "1",
-      transactionId: "12345678",
-      userName: "Tamim",
-      brandName: "John Doe",
-      amount: "$250",
-      date: "16 Apr 2024",
-    },
-    {
-      id: "2",
-      transactionId: "12345678",
-      userName: "Tamim",
-      brandName: "John Doe",
-      amount: "$250",
-      date: "16 Apr 2024",
-    },
-    {
-      id: "3",
-      transactionId: "12345678",
-      userName: "Tamim",
-      brandName: "John Doe",
-      amount: "$250",
-      date: "16 Apr 2024",
-    },
-    {
-      id: "4",
-      transactionId: "12345678",
-      userName: "Tamim",
-      brandName: "John Doe",
-      amount: "$250",
-      date: "16 Apr 2024",
-    },
-    {
-      id: "5",
-      transactionId: "12345678",
-      userName: "Tamim",
-      brandName: "John Doe",
-      amount: "$250",
-      date: "16 Apr 2024",
-    },
-  ],
+  transactions = [],
   onViewTransaction,
 }) => {
+  const {
+    currentPage,
+    totalPages,
+    paginatedItems,
+    setPage,
+  } = useClientPagination(transactions, 5);
+
   return (
     <div className="w-full bg-[#FEFEFE] rounded-[8px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] p-5 flex flex-col gap-4 overflow-hidden">
       {/* Title */}
@@ -77,7 +45,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
 
           {/* Table Body */}
           <tbody className="font-inter text-[14px] text-[#575757]">
-            {transactions.map((tr) => (
+            {paginatedItems.length ? paginatedItems.map((tr) => (
               <tr
                 key={tr.id}
                 className="h-[52px] border-b border-gray-100 hover:bg-gray-50 transition-colors"
@@ -90,7 +58,7 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                 <td className="px-6 py-3 text-right">
                   <button
                     type="button"
-                    onClick={() => onViewTransaction && onViewTransaction(tr.id)}
+                    onClick={() => onViewTransaction?.(tr)}
                     className="inline-flex items-center justify-center w-8 h-8 text-[#3E3EDF] hover:bg-[#3E3EDF]/10 rounded-full transition-colors cursor-pointer"
                     aria-label={`View transaction ${tr.transactionId}`}
                   >
@@ -110,10 +78,22 @@ export const RecentTransactions: React.FC<RecentTransactionsProps> = ({
                   </button>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr className="h-[72px] border-b border-gray-100">
+                <td colSpan={6} className="px-6 py-5 text-center text-[#777777]">
+                  No transactions returned from the backend.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+
+      <PaginationBar
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setPage}
+      />
     </div>
   );
 };

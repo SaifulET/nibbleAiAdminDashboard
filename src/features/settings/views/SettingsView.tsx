@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Sidebar } from "@/features/dashboard/components/Sidebar";
 import { Header } from "@/features/dashboard/components/Header";
 import { SettingsSubTab, UserProfileData } from "@/types/settings.types";
@@ -12,19 +12,49 @@ import { PrivacyPolicyView } from "../components/PrivacyPolicyView";
 import { FaqView } from "../components/FaqView";
 import { SidebarNavItem } from "@/types/dashboard.types";
 import { useRouter } from "next/navigation";
+import { useAdminApiStore } from "@/stores/useAdminApiStore";
+
+const splitPhone = (value: unknown) => {
+  const phone = typeof value === "string" ? value : "";
+  const knownCodes = ["+1242", "+880", "+971", "+44", "+33", "+49", "+91", "+81", "+61", "+1"];
+  const code = knownCodes.find((item) => phone.startsWith(item)) || "+1";
+  return {
+    countryCode: code,
+    phoneNumber: phone.startsWith(code) ? phone.slice(code.length) : phone,
+  };
+};
 
 export const SettingsView = () => {
   const router = useRouter();
   const [activeSubTab, setActiveSubTab] = useState<SettingsSubTab>("menu");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const {
+    profile,
+    clearError,
+    loadProfile,
+    updateProfile,
+    changePassword,
+    forgotPassword,
+    resetPassword,
+    logout,
+  } = useAdminApiStore();
 
-  const [userProfile, setUserProfile] = useState<UserProfileData>({
-    name: "Tamim",
-    email: "gddvc@gmail.com",
-    countryCode: "+1242",
-    phoneNumber: "5735353",
-    role: "Admin",
-  });
+  useEffect(() => {
+    clearError();
+    void loadProfile();
+  }, [clearError, loadProfile]);
+
+  const userProfile = useMemo<UserProfileData>(() => {
+    const phone = splitPhone(profile?.phone);
+    return {
+      name: String(profile?.full_name || profile?.name || profile?.email || "Admin"),
+      email: String(profile?.email || ""),
+      countryCode: phone.countryCode,
+      phoneNumber: phone.phoneNumber,
+      role: String(profile?.role || "Admin"),
+      avatarUrl: String(profile?.avatar_url || profile?.avatar || ""),
+    };
+  }, [profile]);
 
   const handleNavSelect = (item: SidebarNavItem) => {
     switch (item) {
@@ -50,6 +80,7 @@ export const SettingsView = () => {
         router.push("/support");
         break;
       case "logout":
+        logout();
         router.push("/");
         break;
       default:
@@ -73,8 +104,10 @@ export const SettingsView = () => {
         <Header
           adminName={userProfile.name}
           adminRole={userProfile.role}
-          unreadCount={2}
+          unreadCount={0}
           onToggleMobileMenu={() => setIsMobileMenuOpen(true)}
+          onNotificationClick={() => router.push("/support")}
+          onProfileClick={() => setActiveSubTab("personal-info")}
         />
 
         {/* Dynamic Sub-Tab Views */}
@@ -84,14 +117,35 @@ export const SettingsView = () => {
 
         {activeSubTab === "personal-info" && (
           <PersonalInfoView
+            key={`${userProfile.email}-${userProfile.name}-${userProfile.phoneNumber}-${userProfile.avatarUrl}`}
             initialProfile={userProfile}
             onBack={() => setActiveSubTab("menu")}
-            onSaveProfile={(updated) => setUserProfile(updated)}
+            onSaveProfile={async (updated, avatarFile) => {
+              const phone = `${updated.countryCode}${updated.phoneNumber}`.trim();
+              if (avatarFile) {
+                const form = new FormData();
+                form.append("full_name", updated.name);
+                if (phone) form.append("phone", phone);
+                form.append("avatar", avatarFile);
+                await updateProfile(form);
+              } else {
+                await updateProfile({
+                  full_name: updated.name,
+                  phone,
+                });
+              }
+            }}
           />
         )}
 
         {activeSubTab === "change-password" && (
-          <SettingsPasswordFlow onBackToMenu={() => setActiveSubTab("menu")} />
+          <SettingsPasswordFlow
+            defaultEmail={userProfile.email}
+            onBackToMenu={() => setActiveSubTab("menu")}
+            onChangePassword={changePassword}
+            onForgotPassword={forgotPassword}
+            onResetPassword={resetPassword}
+          />
         )}
 
         {activeSubTab === "terms" && (

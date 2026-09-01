@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { useAdminApiStore } from "@/stores/useAdminApiStore";
 
 interface SignInFormProps {
   onForgotPassword: () => void;
@@ -17,14 +18,18 @@ export const SignInForm: React.FC<SignInFormProps> = ({
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { login, error } = useAdminApiStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+    try {
+      await login(username, password, rememberMe);
       setIsLoading(false);
       if (onSuccess) onSuccess();
-    }, 1000);
+    } catch {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -40,8 +45,8 @@ export const SignInForm: React.FC<SignInFormProps> = ({
       {/* Input Fields */}
       <div className="w-full flex flex-col gap-[24px]">
         <Input
-          type="text"
-          placeholder="User name"
+          type="email"
+          placeholder="Email"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           required
@@ -55,6 +60,12 @@ export const SignInForm: React.FC<SignInFormProps> = ({
           required
         />
       </div>
+
+      {error && (
+        <p className="w-full text-left text-sm font-medium text-red-600">
+          {error}
+        </p>
+      )}
 
       {/* Checkbox & Forgot Password Link */}
       <div className="w-full flex items-center justify-between font-inter text-[16px] font-normal leading-[19px]">

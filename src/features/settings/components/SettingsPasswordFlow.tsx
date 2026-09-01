@@ -4,6 +4,10 @@ import React, { useState } from "react";
 
 interface SettingsPasswordFlowProps {
   onBackToMenu: () => void;
+  defaultEmail?: string;
+  onChangePassword?: (currentPassword: string, newPassword: string) => Promise<void>;
+  onForgotPassword?: (email: string) => Promise<void>;
+  onResetPassword?: (email: string, code: string, newPassword: string) => Promise<void>;
 }
 
 type PasswordFlowStep =
@@ -14,6 +18,10 @@ type PasswordFlowStep =
 
 export const SettingsPasswordFlow: React.FC<SettingsPasswordFlowProps> = ({
   onBackToMenu,
+  defaultEmail = "",
+  onChangePassword,
+  onForgotPassword,
+  onResetPassword,
 }) => {
   const [step, setStep] = useState<PasswordFlowStep>("change-password");
 
@@ -26,8 +34,8 @@ export const SettingsPasswordFlow: React.FC<SettingsPasswordFlowProps> = ({
   const [showConfirm, setShowConfirm] = useState(false);
 
   // Forgot Password / OTP state
-  const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState(["", "", "", ""]);
+  const [email, setEmail] = useState(defaultEmail);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
 
   // Reset Password state
   const [resetNewPassword, setResetNewPassword] = useState("");
@@ -36,6 +44,8 @@ export const SettingsPasswordFlow: React.FC<SettingsPasswordFlowProps> = ({
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length > 1) return;
@@ -44,38 +54,85 @@ export const SettingsPasswordFlow: React.FC<SettingsPasswordFlowProps> = ({
     setOtp(newOtp);
 
     // Auto focus next input
-    if (value && index < 3) {
+    if (value && index < 5) {
       const nextInput = document.getElementById(`settings-otp-${index + 1}`);
       nextInput?.focus();
     }
   };
 
-  const handlePasswordUpdate = (e: React.FormEvent) => {
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSuccessMsg("Password updated successfully!");
-    setTimeout(() => {
-      setSuccessMsg("");
-      onBackToMenu();
-    }, 2500);
+    setErrorMsg("");
+
+    if (newPassword !== confirmPassword) {
+      setErrorMsg("New password and confirmation do not match.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await onChangePassword?.(oldPassword, newPassword);
+      setSuccessMsg("Password updated successfully!");
+      window.setTimeout(() => {
+        setSuccessMsg("");
+        onBackToMenu();
+      }, 2500);
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Password update failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStep("verify-otp");
+    setErrorMsg("");
+
+    try {
+      setIsSubmitting(true);
+      await onForgotPassword?.(email);
+      setStep("verify-otp");
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Could not send reset code.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleVerifyOtp = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg("");
+
+    if (otp.join("").length !== 6) {
+      setErrorMsg("Enter the 6 digit code sent to your email.");
+      return;
+    }
+
     setStep("reset-password");
   };
 
-  const handleResetPassword = (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSuccessMsg("Password reset successfully!");
-    setTimeout(() => {
-      setSuccessMsg("");
-      setStep("change-password");
-    }, 2500);
+    setErrorMsg("");
+
+    if (resetNewPassword !== resetConfirmPassword) {
+      setErrorMsg("New password and confirmation do not match.");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await onResetPassword?.(email, otp.join(""), resetNewPassword);
+      setSuccessMsg("Password reset successfully!");
+      window.setTimeout(() => {
+        setSuccessMsg("");
+        setStep("change-password");
+      }, 2500);
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Password reset failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -91,6 +148,12 @@ export const SettingsPasswordFlow: React.FC<SettingsPasswordFlowProps> = ({
           >
             &times;
           </button>
+        </div>
+      )}
+
+      {errorMsg && (
+        <div className="w-full rounded-[8px] border border-red-100 bg-red-50 px-4 py-3 text-[14px] font-medium text-red-600 shadow-xs">
+          {errorMsg}
         </div>
       )}
 
@@ -324,9 +387,10 @@ export const SettingsPasswordFlow: React.FC<SettingsPasswordFlowProps> = ({
             {/* Update Password CTA */}
             <button
               type="submit"
-              className="w-full h-[48px] bg-[#3E3EDF] hover:bg-[#3232C7] text-white font-medium text-[16px] rounded-[8px] transition-colors cursor-pointer shadow-md mt-4"
+              disabled={isSubmitting}
+              className="w-full h-[48px] bg-[#3E3EDF] hover:bg-[#3232C7] disabled:opacity-60 text-white font-medium text-[16px] rounded-[8px] transition-colors cursor-pointer shadow-md mt-4"
             >
-              Update password
+              {isSubmitting ? "Updating..." : "Update password"}
             </button>
           </form>
         </div>
@@ -397,9 +461,10 @@ export const SettingsPasswordFlow: React.FC<SettingsPasswordFlowProps> = ({
 
             <button
               type="submit"
-              className="w-full h-[48px] bg-[#3E3EDF] hover:bg-[#3232C7] text-white font-medium text-[16px] rounded-[8px] transition-colors cursor-pointer shadow-md mt-2"
+              disabled={isSubmitting}
+              className="w-full h-[48px] bg-[#3E3EDF] hover:bg-[#3232C7] disabled:opacity-60 text-white font-medium text-[16px] rounded-[8px] transition-colors cursor-pointer shadow-md mt-2"
             >
-              Send OTP
+              {isSubmitting ? "Sending..." : "Send OTP"}
             </button>
           </form>
         </div>
@@ -434,7 +499,7 @@ export const SettingsPasswordFlow: React.FC<SettingsPasswordFlowProps> = ({
           </div>
 
           <p className="text-[14px] text-[#575757] font-normal">
-            Please enter the 4 digit code sent to your email
+            Please enter the 6 digit code sent to your email
           </p>
 
           <form onSubmit={handleVerifyOtp} className="w-full flex flex-col gap-6">
@@ -588,9 +653,10 @@ export const SettingsPasswordFlow: React.FC<SettingsPasswordFlowProps> = ({
 
             <button
               type="submit"
-              className="w-full h-[48px] bg-[#3E3EDF] hover:bg-[#3232C7] text-white font-medium text-[16px] rounded-[8px] transition-colors cursor-pointer shadow-md mt-2"
+              disabled={isSubmitting}
+              className="w-full h-[48px] bg-[#3E3EDF] hover:bg-[#3232C7] disabled:opacity-60 text-white font-medium text-[16px] rounded-[8px] transition-colors cursor-pointer shadow-md mt-2"
             >
-              Reset Password
+              {isSubmitting ? "Resetting..." : "Reset Password"}
             </button>
           </form>
         </div>

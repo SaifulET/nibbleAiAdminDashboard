@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Sidebar } from "@/features/dashboard/components/Sidebar";
 import { Header } from "@/features/dashboard/components/Header";
 import { StatsCards } from "@/features/dashboard/components/StatsCards";
@@ -10,6 +10,7 @@ import { DeleteConfirmModal } from "../components/DeleteConfirmModal";
 import { BrandDetail } from "@/types/brand.types";
 import { SidebarNavItem } from "@/types/dashboard.types";
 import { useRouter } from "next/navigation";
+import { useAdminApiStore } from "@/stores/useAdminApiStore";
 
 export const BrandView = () => {
   const router = useRouter();
@@ -17,6 +18,11 @@ export const BrandView = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { profile, stats, brands, loadDashboard, suspendBrand, logout } = useAdminApiStore();
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
 
   const handleNavSelect = (item: SidebarNavItem) => {
     switch (item) {
@@ -42,6 +48,7 @@ export const BrandView = () => {
         router.push("/support");
         break;
       case "logout":
+        logout();
         router.push("/");
         break;
       default:
@@ -60,6 +67,7 @@ export const BrandView = () => {
   };
 
   const handleConfirmDelete = () => {
+    if (selectedBrand?.id) void suspendBrand(selectedBrand.id);
     setIsDeleteModalOpen(false);
     setSelectedBrand(null);
   };
@@ -78,17 +86,20 @@ export const BrandView = () => {
       <main className="flex-1 w-full min-h-screen p-4 sm:p-6 md:p-8 flex flex-col gap-6 items-stretch bg-[#FEFEFE] overflow-x-hidden">
         {/* Header */}
         <Header
-          adminName="Tamim"
-          adminRole="Admin"
-          unreadCount={2}
+          adminName={String(profile?.full_name || profile?.email || "Admin")}
+          adminRole={String(profile?.role || "Admin")}
+          unreadCount={0}
           onToggleMobileMenu={() => setIsMobileMenuOpen(true)}
+          onNotificationClick={() => router.push("/support")}
+          onProfileClick={() => router.push("/settings")}
         />
 
         {/* Stats Cards */}
-        <StatsCards />
+        <StatsCards stats={stats} />
 
         {/* Brand List Table with Filter & Actions */}
         <BrandListTable
+          brands={brands}
           onViewBrand={handleViewBrand}
           onDeleteBrand={handleDeleteBrand}
         />

@@ -14,24 +14,9 @@ export const BrandDetailsModal: React.FC<BrandDetailsModalProps> = ({
   onClose,
   brand,
 }) => {
-  if (!isOpen) return null;
+  if (!isOpen || !brand) return null;
 
-  const data: BrandDetail = brand || {
-    id: "1",
-    sl: "1",
-    brandName: "NIBBI AI",
-    name: "Tamim",
-    email: "abc@gmail.com",
-    number: "(+33)6 55 53 38 10",
-    date: "16 Apr 2024",
-    phoneNumber: "+7397386837",
-    address: "South Dakota 83475",
-    joiningDate: "29 Jun 2025",
-    category: "Fashion",
-    productUrl: "https:example.com/product-pagett",
-    priceDiscount: "10% Off",
-    description: "Summer Athletic Collectionashion",
-  };
+  const data: BrandDetail = brand;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
@@ -71,7 +56,7 @@ export const BrandDetailsModal: React.FC<BrandDetailsModalProps> = ({
             {/* Name */}
             <div className="flex flex-col gap-1">
               <span className="font-medium text-[#575757] text-[16px]">Name</span>
-              <span className="font-medium text-[#959595]">{data.name || "Tamim"}</span>
+              <span className="font-medium text-[#959595]">{data.name || "Not returned"}</span>
             </div>
 
             {/* Phone Number */}
@@ -121,7 +106,7 @@ export const BrandDetailsModal: React.FC<BrandDetailsModalProps> = ({
             <div className="flex flex-col gap-1">
               <span className="font-medium text-[#575757] text-[16px]">Address</span>
               <span className="font-medium text-[#959595]">
-                {data.address || "South Dakota 83475"}
+                {data.address || "Not returned"}
               </span>
             </div>
 
@@ -131,7 +116,7 @@ export const BrandDetailsModal: React.FC<BrandDetailsModalProps> = ({
                 Product Or Website URL
               </span>
               <span className="font-medium text-[#959595] truncate">
-                {data.productUrl || "https:example.com/product-pagett"}
+                {data.productUrl || "Not returned"}
               </span>
             </div>
 
@@ -158,7 +143,7 @@ export const BrandDetailsModal: React.FC<BrandDetailsModalProps> = ({
           <div className="flex flex-col gap-1">
             <span className="font-medium text-[#1F1D1D]">Product Image</span>
             <span className="font-medium text-[#575757] text-[13px]">
-              {data.productUrl || "https:example.com/product-pagett"}
+              {data.productUrl || "Not returned"}
             </span>
           </div>
 

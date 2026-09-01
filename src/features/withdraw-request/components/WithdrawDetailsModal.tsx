@@ -18,21 +18,9 @@ export const WithdrawDetailsModal: React.FC<WithdrawDetailsModalProps> = ({
   onApprove,
   onCancelRequest,
 }) => {
-  if (!isOpen) return null;
+  if (!isOpen || !request) return null;
 
-  const data: WithdrawRequestDetail = request || {
-    id: "1",
-    sl: "1",
-    userName: "Enrique",
-    providerName: "Tamim",
-    bankName: "Brac Bank",
-    branchName: "abc branch",
-    accountType: "Savings",
-    accountNumber: "123456789",
-    routingNumber: "123456",
-    withdrawAmount: "$250",
-    status: "Approved",
-  };
+  const data: WithdrawRequestDetail = request;
 
   const handleApproveClick = () => {
     if (onApprove) onApprove(data.id);

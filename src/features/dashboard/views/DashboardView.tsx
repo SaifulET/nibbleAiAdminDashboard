@@ -1,18 +1,29 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Sidebar } from "../components/Sidebar";
 import { Header } from "../components/Header";
 import { StatsCards } from "../components/StatsCards";
 import { EarningsChart } from "../components/EarningsChart";
 import { RecentTransactions } from "../components/RecentTransactions";
+import { TransactionDetailsModal } from "@/features/earnings/components/TransactionDetailsModal";
+import { TransactionDetail } from "@/types/earnings.types";
 import { SidebarNavItem } from "@/types/dashboard.types";
 import { useRouter } from "next/navigation";
+import { useAdminApiStore } from "@/stores/useAdminApiStore";
 
 export const DashboardView = () => {
   const router = useRouter();
   const [activeNav, setActiveNav] = useState<SidebarNavItem>("dashboard");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<TransactionDetail | null>(null);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const { profile, stats, transactions, monthlyEarnings, loadDashboard, logout } = useAdminApiStore();
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
 
   const handleNavSelect = (item: SidebarNavItem) => {
     setActiveNav(item);
@@ -39,11 +50,17 @@ export const DashboardView = () => {
         router.push("/support");
         break;
       case "logout":
+        logout();
         router.push("/");
         break;
       default:
         break;
     }
+  };
+
+  const handleViewTransaction = (transaction: TransactionDetail) => {
+    setSelectedTransaction(transaction);
+    setIsTransactionModalOpen(true);
   };
 
   return (
@@ -60,21 +77,32 @@ export const DashboardView = () => {
       <main className="flex-1 w-full min-h-screen p-4 sm:p-6 md:p-8 flex flex-col gap-6 items-stretch bg-[#FEFEFE] overflow-x-hidden">
         {/* Header with Mobile Menu Toggle */}
         <Header
-          adminName="Tamim"
-          adminRole="Admin"
-          unreadCount={2}
+          adminName={String(profile?.full_name || profile?.email || "Admin")}
+          adminRole={String(profile?.role || "Admin")}
+          unreadCount={0}
           onToggleMobileMenu={() => setIsMobileMenuOpen(true)}
+          onNotificationClick={() => router.push("/support")}
+          onProfileClick={() => router.push("/settings")}
         />
 
         {/* Stats Summary Cards */}
-        <StatsCards />
+        <StatsCards stats={stats} />
 
         {/* Earnings Bar Chart */}
-        <EarningsChart />
+        <EarningsChart data={monthlyEarnings} />
 
         {/* Recent Transactions Table */}
-        <RecentTransactions />
+        <RecentTransactions
+          transactions={transactions}
+          onViewTransaction={handleViewTransaction}
+        />
       </main>
+
+      <TransactionDetailsModal
+        isOpen={isTransactionModalOpen}
+        onClose={() => setIsTransactionModalOpen(false)}
+        transaction={selectedTransaction}
+      />
     </div>
   );
 };

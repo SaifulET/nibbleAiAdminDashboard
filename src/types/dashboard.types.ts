@@ -5,8 +5,9 @@ export interface StatCardData {
 }
 
 export interface MonthlyEarning {
+  year?: string;
   month: string;
-  amount: number; // in thousands or exact value
+  amount: number;
   formattedAmount: string;
 }
 

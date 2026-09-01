@@ -12,26 +12,24 @@ interface TransactionDetailsModalProps {
 export const TransactionDetailsModal: React.FC<
   TransactionDetailsModalProps
 > = ({ isOpen, onClose, transaction }) => {
-  if (!isOpen) return null;
+  if (!isOpen || !transaction) return null;
 
-  const data: TransactionDetail = transaction || {
-    id: "1",
-    transactionId: "#12345678",
-    userName: "Tamim",
-    brandName: "John Doe",
-    amount: "$260",
-    date: "01-24-2024",
-    accountNumber: "**** **** **** *545",
-    accountHolderName: "Tamim",
-    providerName: "XYZ",
-  };
+  const data: TransactionDetail = transaction;
 
   const handlePrint = () => {
     window.print();
   };
 
   const handleDownload = () => {
-    // Receipt download logic
+    const file = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `transaction-${data.transactionId}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -93,7 +91,7 @@ export const TransactionDetailsModal: React.FC<
           <div className="flex items-center justify-between py-3 border-b border-[#3E3EDF]">
             <span className="font-medium text-[#1F1D1D]">A/C number :</span>
             <span className="font-medium text-[#1F1D1D]">
-              {data.accountNumber || "**** **** **** *545"}
+              {data.accountNumber || "Not returned"}
             </span>
           </div>
 
@@ -101,7 +99,7 @@ export const TransactionDetailsModal: React.FC<
           <div className="flex items-center justify-between py-3 border-b border-[#3E3EDF]">
             <span className="font-medium text-[#1F1D1D]">A/C holder name :</span>
             <span className="font-normal text-[#1F1D1D]">
-              {data.accountHolderName || data.userName}
+              {data.accountHolderName || data.userName || "Not returned"}
             </span>
           </div>
 
@@ -115,7 +113,7 @@ export const TransactionDetailsModal: React.FC<
           <div className="flex items-center justify-between py-3 border-b border-[#3E3EDF]">
             <span className="font-medium text-[#1F1D1D]">Provider name :</span>
             <span className="font-medium text-[#1F1D1D]">
-              {data.providerName || "XYZ"}
+              {data.providerName || "Not returned"}
             </span>
           </div>
         </div>

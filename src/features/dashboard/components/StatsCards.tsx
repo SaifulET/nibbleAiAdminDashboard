@@ -6,12 +6,16 @@ interface StatsCardsProps {
 }
 
 export const StatsCards: React.FC<StatsCardsProps> = ({
-  stats = [
-    { id: "1", title: "Total Earnings", value: "$24.88 K" },
-    { id: "2", title: "Total Users", value: "6500" },
-    { id: "3", title: "Total Brand", value: "740" },
-  ],
+  stats = [],
 }) => {
+  if (!stats.length) {
+    return (
+      <div className="w-full rounded-[8px] border border-gray-100 bg-white p-6 text-center font-inter text-sm text-[#575757] shadow-[0px_2px_8px_rgba(0,0,0,0.06)]">
+        No dashboard stats returned from the backend.
+      </div>
+    );
+  }
+
   return (
     <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       {stats.map((item) => (

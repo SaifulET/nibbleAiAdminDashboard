@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Sidebar } from "@/features/dashboard/components/Sidebar";
 import { Header } from "@/features/dashboard/components/Header";
 import { StatsCards } from "@/features/dashboard/components/StatsCards";
@@ -9,6 +9,7 @@ import { WithdrawDetailsModal } from "../components/WithdrawDetailsModal";
 import { WithdrawRequestDetail } from "@/types/withdraw-request.types";
 import { SidebarNavItem } from "@/types/dashboard.types";
 import { useRouter } from "next/navigation";
+import { useAdminApiStore } from "@/stores/useAdminApiStore";
 
 export const WithdrawRequestView = () => {
   const router = useRouter();
@@ -16,6 +17,20 @@ export const WithdrawRequestView = () => {
     useState<WithdrawRequestDetail | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const {
+    profile,
+    stats,
+    withdrawals,
+    loadDashboard,
+    loadWithdrawals,
+    processWithdrawal,
+    logout,
+  } = useAdminApiStore();
+
+  useEffect(() => {
+    void loadDashboard();
+    void loadWithdrawals();
+  }, [loadDashboard, loadWithdrawals]);
 
   const handleNavSelect = (item: SidebarNavItem) => {
     switch (item) {
@@ -41,6 +56,7 @@ export const WithdrawRequestView = () => {
         router.push("/support");
         break;
       case "logout":
+        logout();
         router.push("/");
         break;
       default:
@@ -54,10 +70,12 @@ export const WithdrawRequestView = () => {
   };
 
   const handleApprove = () => {
+    if (selectedRequest?.id) void processWithdrawal(selectedRequest.id, "approve");
     setIsModalOpen(false);
   };
 
   const handleCancelRequest = () => {
+    if (selectedRequest?.id) void processWithdrawal(selectedRequest.id, "reject");
     setIsModalOpen(false);
   };
 
@@ -75,17 +93,22 @@ export const WithdrawRequestView = () => {
       <main className="flex-1 w-full min-h-screen p-4 sm:p-6 md:p-8 flex flex-col gap-6 items-stretch bg-[#FEFEFE] overflow-x-hidden">
         {/* Header */}
         <Header
-          adminName="Tamim"
-          adminRole="Admin"
-          unreadCount={2}
+          adminName={String(profile?.full_name || profile?.email || "Admin")}
+          adminRole={String(profile?.role || "Admin")}
+          unreadCount={0}
           onToggleMobileMenu={() => setIsMobileMenuOpen(true)}
+          onNotificationClick={() => router.push("/support")}
+          onProfileClick={() => router.push("/settings")}
         />
 
-        {/* Stats Cards */}
-        <StatsCards />
+        {/* Withdrawal analytics use the shared admin overview cards until a dedicated withdrawal overview endpoint exists. */}
+        <StatsCards stats={stats} />
 
         {/* Withdraw Request Table */}
-        <WithdrawRequestTable onViewRequest={handleOpenModal} />
+        <WithdrawRequestTable
+          requests={withdrawals}
+          onViewRequest={handleOpenModal}
+        />
       </main>
 
       {/* Withdraw Details Modal */}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 interface PaginationBarProps {
   currentPage?: number;
@@ -9,24 +9,34 @@ interface PaginationBarProps {
 }
 
 export const PaginationBar: React.FC<PaginationBarProps> = ({
-  currentPage = 12,
-  totalPages = 15,
+  currentPage = 1,
+  totalPages = 1,
   onPageChange,
 }) => {
-  const [activePage, setActivePage] = useState(currentPage);
-  const [goToInput, setGoToInput] = useState("15");
+  const [goToInput, setGoToInput] = useState(String(currentPage));
+  const safeTotalPages = Math.max(1, totalPages);
+  const safeCurrentPage = Math.min(Math.max(currentPage, 1), safeTotalPages);
+
+  const pages = useMemo(() => {
+    const pageSet = new Set([1, safeCurrentPage - 1, safeCurrentPage, safeCurrentPage + 1, safeTotalPages]);
+    return Array.from(pageSet)
+      .filter((page) => page >= 1 && page <= safeTotalPages)
+      .sort((a, b) => a - b);
+  }, [safeCurrentPage, safeTotalPages]);
 
   const handlePageClick = (page: number) => {
-    setActivePage(page);
-    if (onPageChange) onPageChange(page);
+    setGoToInput(String(page));
+    onPageChange?.(page);
   };
 
   const handleGoTo = () => {
     const pageNum = parseInt(goToInput, 10);
-    if (pageNum >= 1 && pageNum <= totalPages) {
+    if (pageNum >= 1 && pageNum <= safeTotalPages) {
       handlePageClick(pageNum);
     }
   };
+
+  if (safeTotalPages <= 1) return null;
 
   return (
     <div className="w-full flex flex-wrap items-center justify-center gap-4 py-4 font-poppins text-[14px]">
@@ -35,8 +45,8 @@ export const PaginationBar: React.FC<PaginationBarProps> = ({
         {/* Back Button */}
         <button
           type="button"
-          onClick={() => activePage > 1 && handlePageClick(activePage - 1)}
-          disabled={activePage <= 1}
+          onClick={() => safeCurrentPage > 1 && handlePageClick(safeCurrentPage - 1)}
+          disabled={safeCurrentPage <= 1}
           className="h-[36px] px-3 bg-[#FEFEFE] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border border-[#FEFEFE] rounded-[4px] text-[#1F1D1D] flex items-center gap-1 hover:bg-gray-50 transition-colors disabled:opacity-50 cursor-pointer"
         >
           <svg
@@ -54,64 +64,34 @@ export const PaginationBar: React.FC<PaginationBarProps> = ({
           <span>Back</span>
         </button>
 
-        {/* Page Item 1 */}
-        <button
-          type="button"
-          onClick={() => handlePageClick(1)}
-          className={`h-[36px] min-w-[29px] px-2 bg-[#FEFEFE] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border border-[#FEFEFE] rounded-[4px] text-[#1F1D1D] flex items-center justify-center cursor-pointer ${
-            activePage === 1 ? "font-bold text-[#3E3EDF]" : ""
-          }`}
-        >
-          1
-        </button>
-
-        {/* Ellipsis */}
-        <span className="h-[36px] min-w-[31px] bg-[#FEFEFE] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] rounded-[4px] flex items-center justify-center px-2 text-[#1F1D1D]">
-          ...
-        </span>
-
-        {/* Page Item 12 (Active) */}
-        <button
-          type="button"
-          onClick={() => handlePageClick(12)}
-          className={`h-[36px] min-w-[29px] px-2 rounded-[4px] flex items-center justify-center cursor-pointer transition-colors ${
-            activePage === 12
-              ? "bg-[#3E3EDF] text-[#FEFEFE] font-medium"
-              : "bg-[#FEFEFE] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] text-[#1F1D1D]"
-          }`}
-        >
-          12
-        </button>
-
-        {/* Page Item 13 */}
-        <button
-          type="button"
-          onClick={() => handlePageClick(13)}
-          className={`h-[36px] min-w-[29px] px-2 bg-[#FEFEFE] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border border-[#FEFEFE] rounded-[4px] text-[#1F1D1D] flex items-center justify-center cursor-pointer ${
-            activePage === 13 ? "bg-[#3E3EDF] text-[#FEFEFE]" : ""
-          }`}
-        >
-          13
-        </button>
-
-        {/* Page Item 14 */}
-        <button
-          type="button"
-          onClick={() => handlePageClick(14)}
-          className={`h-[36px] min-w-[30px] px-2 bg-[#FEFEFE] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] border border-[#FEFEFE] rounded-[4px] text-[#1F1D1D] flex items-center justify-center cursor-pointer ${
-            activePage === 14 ? "bg-[#3E3EDF] text-[#FEFEFE]" : ""
-          }`}
-        >
-          14
-        </button>
+        {pages.map((page, index) => (
+          <React.Fragment key={page}>
+            {index > 0 && page - pages[index - 1] > 1 && (
+              <span className="h-[36px] min-w-[31px] bg-[#FEFEFE] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] rounded-[4px] flex items-center justify-center px-2 text-[#1F1D1D]">
+                ...
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => handlePageClick(page)}
+              className={`h-[36px] min-w-[29px] px-2 rounded-[4px] flex items-center justify-center cursor-pointer transition-colors ${
+                safeCurrentPage === page
+                  ? "bg-[#3E3EDF] text-[#FEFEFE] font-medium"
+                  : "bg-[#FEFEFE] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] text-[#1F1D1D]"
+              }`}
+            >
+              {page}
+            </button>
+          </React.Fragment>
+        ))}
 
         {/* Next Button */}
         <button
           type="button"
           onClick={() =>
-            activePage < totalPages && handlePageClick(activePage + 1)
+            safeCurrentPage < safeTotalPages && handlePageClick(safeCurrentPage + 1)
           }
-          disabled={activePage >= totalPages}
+          disabled={safeCurrentPage >= safeTotalPages}
           className="h-[36px] px-3 bg-[#3E3EDF] hover:bg-[#3232C7] text-[#FEFEFE] rounded-[4px] flex items-center gap-1 transition-colors disabled:opacity-50 cursor-pointer"
         >
           <span>Next</span>
