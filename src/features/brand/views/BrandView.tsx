@@ -18,7 +18,16 @@ export const BrandView = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { profile, stats, brands, loadDashboard, suspendBrand, logout } = useAdminApiStore();
+  const {
+    profile,
+    stats,
+    brands,
+    loadDashboard,
+    suspendBrand,
+    reactivateBrand,
+    approveBrand,
+    logout,
+  } = useAdminApiStore();
 
   useEffect(() => {
     void loadDashboard();
@@ -62,8 +71,17 @@ export const BrandView = () => {
   };
 
   const handleDeleteBrand = (brand: BrandDetail) => {
+    if (brand.source === "brand-account") return;
     setSelectedBrand(brand);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleApproveBrandAccount = (brand: BrandDetail) => {
+    if (brand.id) void approveBrand(brand);
+  };
+
+  const handleReactivateBrand = (brand: BrandDetail) => {
+    if (brand.id) void reactivateBrand(brand.id);
   };
 
   const handleConfirmDelete = () => {
@@ -102,6 +120,8 @@ export const BrandView = () => {
           brands={brands}
           onViewBrand={handleViewBrand}
           onDeleteBrand={handleDeleteBrand}
+          onReactivateBrand={handleReactivateBrand}
+          onApproveBrandAccount={handleApproveBrandAccount}
         />
       </main>
 

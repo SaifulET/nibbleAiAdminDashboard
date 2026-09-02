@@ -13,6 +13,9 @@ export interface BrandDetail {
   productUrl?: string;
   priceDiscount?: string;
   description?: string;
+  status?: string;
+  source?: "brand" | "brand-account" | "brand-application";
+  canApprove?: boolean;
 }
 
 export interface BrandFilterState {

@@ -73,7 +73,57 @@ const mapBrand = (item: ApiRecord, index: number): BrandDetail => ({
   category: String(item.category ?? ""),
   productUrl: String(item.website ?? ""),
   description: String(item.description ?? ""),
+  status: String(item.status ?? "active"),
+  source: "brand",
+  canApprove: false,
 });
+
+const mapBrandAccount = (item: ApiRecord, index: number): BrandDetail => ({
+  id: String(item.id ?? index),
+  sl: String(index + 1),
+  brandName: String(item.full_name ?? item.email ?? "Pending brand account"),
+  name: String(item.full_name ?? ""),
+  email: String(item.email ?? ""),
+  number: String(item.phone ?? item.phone_number ?? ""),
+  date: dateText(item.created_at),
+  status: "pending approval",
+  source: "brand-account",
+  canApprove: true,
+});
+
+const mapBrandApplication = (item: ApiRecord, index: number): BrandDetail => ({
+  id: String(item.id ?? index),
+  sl: String(index + 1),
+  brandName: String(item.brand_name ?? "Pending brand application"),
+  name: String(item.brand_name ?? ""),
+  email: String(item.contact_email ?? ""),
+  number: "",
+  date: dateText(item.created_at),
+  productUrl: String(item.website ?? ""),
+  description: String(item.message ?? ""),
+  status: "pending approval",
+  source: "brand-application",
+  canApprove: true,
+});
+
+const mergeBrandRows = (
+  brandList: ApiRecord[],
+  userList: ApiRecord[],
+  applicationList: ApiRecord[] = []
+): BrandDetail[] => {
+  const activeBrands = brandList.map(mapBrand);
+  const pendingApplications = applicationList
+    .filter((item) => String(item.status ?? "").toLowerCase() === "pending")
+    .map((item, index) => mapBrandApplication(item, activeBrands.length + index));
+  const pendingBrandAccounts = userList
+    .filter((item) => String(item.role ?? "").toLowerCase() === "brand" && item.is_approved === false)
+    .map((item, index) => mapBrandAccount(item, activeBrands.length + pendingApplications.length + index));
+
+  return [...pendingApplications, ...pendingBrandAccounts, ...activeBrands].map((brand, index) => ({
+    ...brand,
+    sl: String(index + 1),
+  }));
+};
 
 const mapTransaction = (item: ApiRecord, index: number): TransactionDetail => ({
   id: String(item.id ?? index),
@@ -170,6 +220,8 @@ interface AdminApiState {
   resetPassword: (email: string, code: string, newPassword: string) => Promise<void>;
   processWithdrawal: (withdrawalId: string, action: "approve" | "reject") => Promise<void>;
   suspendBrand: (brandId: string) => Promise<void>;
+  reactivateBrand: (brandId: string) => Promise<void>;
+  approveBrand: (brand: BrandDetail) => Promise<void>;
 }
 
 export const useAdminApiStore = create<AdminApiState>()(
@@ -240,21 +292,23 @@ export const useAdminApiStore = create<AdminApiState>()(
 
         set({ status: "loading", error: null });
         try {
-          const [profile, overview, users, brands, transactions] = await Promise.all([
+          const [profile, overview, users, brands, applications, transactions] = await Promise.all([
             nibblApi.me(),
             apiClient.request<ApiRecord>(backendApi.admin.analyticsOverview),
             apiClient.request<unknown>(backendApi.admin.users),
             apiClient.request<unknown>(backendApi.admin.brands),
+            apiClient.request<unknown>(backendApi.admin.brandApplications),
             apiClient.request<unknown>(backendApi.admin.transactions),
           ]);
           const userList = listResults(users);
           const brandList = listResults(brands);
+          const applicationList = listResults(applications);
           const transactionList = listResults(transactions);
           set({
             profile,
             overview,
             users: userList.map(mapUser),
-            brands: brandList.map(mapBrand),
+            brands: mergeBrandRows(brandList, userList, applicationList),
             transactions: transactionList.map(mapTransaction),
             monthlyEarnings: mapMonthlyEarnings(transactionList),
             stats: [
@@ -273,8 +327,12 @@ export const useAdminApiStore = create<AdminApiState>()(
         set({ users: listResults(response).map(mapUser) });
       },
       loadBrands: async () => {
-        const response = await apiClient.request<unknown>(backendApi.admin.brands);
-        set({ brands: listResults(response).map(mapBrand) });
+        const [brands, users, applications] = await Promise.all([
+          apiClient.request<unknown>(backendApi.admin.brands),
+          apiClient.request<unknown>(backendApi.admin.users),
+          apiClient.request<unknown>(backendApi.admin.brandApplications),
+        ]);
+        set({ brands: mergeBrandRows(listResults(brands), listResults(users), listResults(applications)) });
       },
       loadWithdrawals: async () => {
         const response = await apiClient.request<unknown>(backendApi.admin.withdrawals);
@@ -341,6 +399,18 @@ export const useAdminApiStore = create<AdminApiState>()(
       },
       suspendBrand: async (brandId) => {
         await apiClient.request(backendApi.admin.suspendBrand(brandId));
+        await get().loadBrands();
+      },
+      reactivateBrand: async (brandId) => {
+        await apiClient.request(backendApi.admin.reactivateBrand(brandId));
+        await get().loadBrands();
+      },
+      approveBrand: async (brand) => {
+        if (brand.source === "brand-application") {
+          await apiClient.request(backendApi.admin.approveBrandApplication(brand.id));
+        } else if (brand.source === "brand-account") {
+          await apiClient.request(backendApi.admin.approveBrandAccount(brand.id));
+        }
         await get().loadBrands();
       },
     }),

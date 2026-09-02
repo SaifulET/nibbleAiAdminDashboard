@@ -108,15 +108,15 @@ export const EarningsChart: React.FC<EarningsChartProps> = ({ data = [] }) => {
       <div className="w-full overflow-x-auto pb-2">
         <div className="min-w-[500px] sm:min-w-full flex items-end gap-3 h-[200px] relative pt-6">
           <div className="h-full flex flex-col justify-between pr-2 text-right font-inter text-[12px] sm:text-[14px] font-medium text-[#575757] shrink-0 pb-6">
-            {yLabels.map((label) => (
-              <span key={label}>{label}</span>
+            {yLabels.map((label, index) => (
+              <span key={`${label}-${index}`}>{label}</span>
             ))}
           </div>
 
           <div className="flex-1 h-full flex flex-col justify-between relative">
             <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-6">
-              {yLabels.map((label) => (
-                <div key={label} className="w-full border-t border-[#575757]/20 h-0" />
+              {yLabels.map((label, index) => (
+                <div key={`${label}-${index}`} className="w-full border-t border-[#575757]/20 h-0" />
               ))}
             </div>
 

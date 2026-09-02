@@ -10,12 +10,16 @@ interface BrandListTableProps {
   brands?: BrandDetail[];
   onViewBrand?: (brand: BrandDetail) => void;
   onDeleteBrand?: (brand: BrandDetail) => void;
+  onReactivateBrand?: (brand: BrandDetail) => void;
+  onApproveBrandAccount?: (brand: BrandDetail) => void;
 }
 
 export const BrandListTable: React.FC<BrandListTableProps> = ({
   brands = [],
   onViewBrand,
   onDeleteBrand,
+  onReactivateBrand,
+  onApproveBrandAccount,
 }) => {
   const {
     currentPage,
@@ -45,6 +49,7 @@ export const BrandListTable: React.FC<BrandListTableProps> = ({
               <th className="px-6 py-3">Brand Name</th>
               <th className="px-6 py-3">Email</th>
               <th className="px-6 py-3">Number</th>
+              <th className="px-6 py-3">Status</th>
               <th className="px-6 py-3">Date</th>
               <th className="px-6 py-3 text-right rounded-r-[4px]">Action</th>
             </tr>
@@ -61,9 +66,30 @@ export const BrandListTable: React.FC<BrandListTableProps> = ({
                 <td className="px-6 py-3">{bnd.brandName}</td>
                 <td className="px-6 py-3">{bnd.email}</td>
                 <td className="px-6 py-3">{bnd.number}</td>
+                <td className="px-6 py-3 capitalize">{bnd.status || "active"}</td>
                 <td className="px-6 py-3">{bnd.date}</td>
                 <td className="px-6 py-3 text-right">
                   <div className="inline-flex items-center justify-end gap-2">
+                    {bnd.canApprove && (
+                      <button
+                        type="button"
+                        onClick={() => onApproveBrandAccount && onApproveBrandAccount(bnd)}
+                        className="inline-flex items-center justify-center h-8 px-3 text-[13px] font-medium text-white bg-[#22A06B] hover:bg-[#1F8F60] rounded-[6px] transition-colors cursor-pointer"
+                        aria-label={`Approve brand account ${bnd.brandName}`}
+                      >
+                        Approve
+                      </button>
+                    )}
+                    {bnd.source === "brand" && bnd.status?.toLowerCase() === "suspended" && (
+                      <button
+                        type="button"
+                        onClick={() => onReactivateBrand && onReactivateBrand(bnd)}
+                        className="inline-flex items-center justify-center h-8 px-3 text-[13px] font-medium text-white bg-[#22A06B] hover:bg-[#1F8F60] rounded-[6px] transition-colors cursor-pointer"
+                        aria-label={`Activate brand ${bnd.brandName}`}
+                      >
+                        Activate
+                      </button>
+                    )}
                     {/* View Eye Icon */}
                     <button
                       type="button"
@@ -90,6 +116,7 @@ export const BrandListTable: React.FC<BrandListTableProps> = ({
                     <button
                       type="button"
                       onClick={() => onDeleteBrand && onDeleteBrand(bnd)}
+                      disabled={bnd.source === "brand-account"}
                       className="inline-flex items-center justify-center w-8 h-8 text-[#FF5C5C] hover:bg-[#FF5C5C]/10 rounded-full transition-colors cursor-pointer"
                       aria-label={`Delete brand ${bnd.brandName}`}
                     >
@@ -114,7 +141,7 @@ export const BrandListTable: React.FC<BrandListTableProps> = ({
               </tr>
             )) : (
               <tr className="h-[72px] border-b border-gray-100">
-                <td colSpan={6} className="px-6 py-5 text-center text-[#777777]">
+                <td colSpan={7} className="px-6 py-5 text-center text-[#777777]">
                   No brands returned from the backend.
                 </td>
               </tr>
