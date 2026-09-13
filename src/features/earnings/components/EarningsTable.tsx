@@ -2,7 +2,6 @@
 
 import React from "react";
 import { TransactionDetail } from "@/types/earnings.types";
-import { EarningsFilterBar } from "./EarningsFilterBar";
 import { PaginationBar } from "./PaginationBar";
 import { useClientPagination } from "@/hooks/useClientPagination";
 
@@ -24,13 +23,11 @@ export const EarningsTable: React.FC<EarningsTableProps> = ({
 
   return (
     <div className="w-full bg-[#FEFEFE] rounded-[8px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] p-4 sm:p-6 flex flex-col gap-6 overflow-hidden">
-      {/* Top Header: Title + Pill Filter Bar */}
-      <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      {/* Top Header */}
+      <div className="w-full flex items-center justify-between gap-4">
         <h2 className="font-inter text-[20px] font-medium leading-[24px] text-[#1F1D1D]">
           Recent Transactions
         </h2>
-
-        <EarningsFilterBar />
       </div>
 
       {/* Table Container */}

@@ -27,5 +27,4 @@ export type SidebarNavItem =
   | "brand"
   | "withdraw-request"
   | "settings"
-  | "support"
   | "logout";

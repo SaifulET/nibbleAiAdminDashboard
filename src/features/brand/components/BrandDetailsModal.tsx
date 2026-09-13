@@ -17,6 +17,8 @@ export const BrandDetailsModal: React.FC<BrandDetailsModalProps> = ({
   if (!isOpen || !brand) return null;
 
   const data: BrandDetail = brand;
+  const isApplication = data.source === "brand-application";
+  const websiteUrl = data.website || "";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
@@ -55,103 +57,117 @@ export const BrandDetailsModal: React.FC<BrandDetailsModalProps> = ({
           <div className="flex flex-col gap-4">
             {/* Name */}
             <div className="flex flex-col gap-1">
-              <span className="font-medium text-[#575757] text-[16px]">Name</span>
+              <span className="font-medium text-[#575757] text-[16px]">
+                {isApplication ? "Applicant Brand Name" : "Brand Name"}
+              </span>
               <span className="font-medium text-[#959595]">{data.name || "Not returned"}</span>
             </div>
 
-            {/* Phone Number */}
+            {!isApplication && (
+              <div className="flex flex-col gap-1">
+                <span className="font-medium text-[#575757] text-[16px]">Legal Name</span>
+                <span className="font-medium text-[#959595]">{data.legalName || "Not returned"}</span>
+              </div>
+            )}
+
+            {!isApplication && (
+              <div className="flex flex-col gap-1">
+                <span className="font-medium text-[#575757] text-[16px]">Slug</span>
+                <span className="font-medium text-[#959595]">{data.slug || "Not returned"}</span>
+              </div>
+            )}
+
+            {/* Created Date */}
             <div className="flex flex-col gap-1">
-              <span className="font-medium text-[#575757] text-[16px]">Phone Number</span>
+              <span className="font-medium text-[#575757] text-[16px]">Created Date</span>
               <span className="font-medium text-[#959595]">
-                {data.phoneNumber || "+7397386837"}
+                {data.date || "Not returned"}
               </span>
             </div>
 
-            {/* Joining Date */}
             <div className="flex flex-col gap-1">
-              <span className="font-medium text-[#575757] text-[16px]">Joining Date</span>
+              <span className="font-medium text-[#575757] text-[16px]">Status</span>
               <span className="font-medium text-[#959595]">
-                {data.joiningDate || "29 Jun 2025"}
+                {data.status || "Not returned"}
               </span>
             </div>
 
-            {/* Brand Name */}
-            <div className="flex flex-col gap-1">
-              <span className="font-medium text-[#575757] text-[16px]">Brand Name</span>
-              <span className="font-medium text-[#959595]">
-                {data.brandName || "NIBBI AI"}
-              </span>
-            </div>
-
-            {/* Category */}
-            <div className="flex flex-col gap-1">
-              <span className="font-medium text-[#575757] text-[16px]">Category</span>
-              <span className="font-medium text-[#959595]">
-                {data.category || "Fashion"}
-              </span>
-            </div>
+            {isApplication && (
+              <div className="flex flex-col gap-1">
+                <span className="font-medium text-[#575757] text-[16px]">Requested Plan</span>
+                <span className="font-medium text-[#959595]">
+                  {data.requestedPlan || "Not returned"}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Right Column */}
           <div className="flex flex-col gap-4">
             {/* Email */}
             <div className="flex flex-col gap-1">
-              <span className="font-medium text-[#575757] text-[16px]">Email</span>
+              <span className="font-medium text-[#575757] text-[16px]">Contact Email</span>
               <span className="font-medium text-[#959595]">
-                {data.email || "abc@gmail.com"}
+                {data.email || "Not returned"}
               </span>
             </div>
 
-            {/* Address */}
-            <div className="flex flex-col gap-1">
-              <span className="font-medium text-[#575757] text-[16px]">Address</span>
-              <span className="font-medium text-[#959595]">
-                {data.address || "Not returned"}
-              </span>
-            </div>
+            {!isApplication && (
+              <div className="flex flex-col gap-1">
+                <span className="font-medium text-[#575757] text-[16px]">Plan</span>
+                <span className="font-medium text-[#959595]">
+                  {data.planName || "Not returned"}
+                </span>
+              </div>
+            )}
 
-            {/* Product Or Website URL */}
+            {/* Website URL */}
             <div className="flex flex-col gap-1">
               <span className="font-medium text-[#575757] text-[14px] truncate">
-                Product Or Website URL
+                Website URL
               </span>
               <span className="font-medium text-[#959595] truncate">
-                {data.productUrl || "Not returned"}
-              </span>
-            </div>
-
-            {/* Price */}
-            <div className="flex flex-col gap-1">
-              <span className="font-medium text-[#575757] text-[16px]">Price</span>
-              <span className="font-medium text-[#959595]">
-                {data.priceDiscount || "10% Off"}
+                {websiteUrl || "Not returned"}
               </span>
             </div>
 
             {/* Description */}
             <div className="flex flex-col gap-1">
-              <span className="font-medium text-[#575757] text-[16px]">Description</span>
+              <span className="font-medium text-[#575757] text-[16px]">
+                {isApplication ? "Message" : "Description"}
+              </span>
               <span className="font-medium text-[#959595] truncate">
-                {data.description || "Summer Athletic Collectionashion"}
+                {data.description || "Not returned"}
               </span>
             </div>
+
+            {isApplication && (
+              <div className="flex flex-col gap-1">
+                <span className="font-medium text-[#575757] text-[16px]">Decision Reason</span>
+                <span className="font-medium text-[#959595] truncate">
+                  {data.decisionReason || "Not returned"}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Bottom Full Row: Product Image + Click here Link */}
+        {/* Bottom Full Row: Website Link */}
         <div className="w-full flex items-end justify-between pt-2 border-t border-gray-100 font-inter text-[14px]">
           <div className="flex flex-col gap-1">
-            <span className="font-medium text-[#1F1D1D]">Product Image</span>
+            <span className="font-medium text-[#1F1D1D]">Website</span>
             <span className="font-medium text-[#575757] text-[13px]">
-              {data.productUrl || "Not returned"}
+              {websiteUrl || "Not returned"}
             </span>
           </div>
 
           <a
-            href={data.productUrl || "#"}
+            href={websiteUrl || "#"}
             target="_blank"
             rel="noopener noreferrer"
-            className="font-medium text-[#000000] underline hover:opacity-80 transition-opacity"
+            className={`font-medium text-[#000000] underline hover:opacity-80 transition-opacity ${
+              websiteUrl ? "" : "pointer-events-none opacity-50"
+            }`}
           >
             Click here
           </a>

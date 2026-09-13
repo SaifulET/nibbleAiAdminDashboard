@@ -466,11 +466,6 @@ export const backendApi = {
       path: `/admin/users/${userId}/reactivate/`,
       auth: true,
     }),
-    approveBrandAccount: (userId: string): ApiEndpoint => ({
-      method: "POST",
-      path: `/admin/users/${userId}/approve-brand/`,
-      auth: true,
-    }),
     brandApplications: {
       method: "GET",
       path: "/admin/brand-applications/",

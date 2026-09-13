@@ -83,7 +83,7 @@ export const WithdrawDetailsModal: React.FC<WithdrawDetailsModalProps> = ({
           <div className="flex items-center justify-between py-3 border-b border-[#3E3EDF]">
             <span className="font-medium text-[#1F1D1D]">A/C Branch</span>
             <span className="font-medium text-[#1F1D1D]">
-              {data.branchName || "abc branch"}
+              {data.branchName || "Not returned"}
             </span>
           </div>
 
@@ -99,7 +99,7 @@ export const WithdrawDetailsModal: React.FC<WithdrawDetailsModalProps> = ({
           <div className="flex items-center justify-between py-3 border-b border-[#3E3EDF]">
             <span className="font-medium text-[#1F1D1D]">Routing Number</span>
             <span className="font-medium text-[#1F1D1D]">
-              {data.routingNumber || "123456"}
+              {data.routingNumber || "Not returned"}
             </span>
           </div>
 

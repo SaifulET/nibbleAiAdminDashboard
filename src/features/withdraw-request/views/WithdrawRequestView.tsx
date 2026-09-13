@@ -52,9 +52,6 @@ export const WithdrawRequestView = () => {
       case "settings":
         router.push("/settings");
         break;
-      case "support":
-        router.push("/support");
-        break;
       case "logout":
         logout();
         router.push("/");
@@ -97,7 +94,6 @@ export const WithdrawRequestView = () => {
           adminRole={String(profile?.role || "Admin")}
           unreadCount={0}
           onToggleMobileMenu={() => setIsMobileMenuOpen(true)}
-          onNotificationClick={() => router.push("/support")}
           onProfileClick={() => router.push("/settings")}
         />
 

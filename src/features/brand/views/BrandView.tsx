@@ -23,9 +23,11 @@ export const BrandView = () => {
     stats,
     brands,
     loadDashboard,
+    loadBrandDetail,
     suspendBrand,
     reactivateBrand,
     approveBrand,
+    rejectBrandApplication,
     logout,
   } = useAdminApiStore();
 
@@ -53,9 +55,6 @@ export const BrandView = () => {
       case "settings":
         router.push("/settings");
         break;
-      case "support":
-        router.push("/support");
-        break;
       case "logout":
         logout();
         router.push("/");
@@ -65,13 +64,20 @@ export const BrandView = () => {
     }
   };
 
-  const handleViewBrand = (brand: BrandDetail) => {
-    setSelectedBrand(brand);
+  const handleViewBrand = async (brand: BrandDetail) => {
     setIsDetailsModalOpen(true);
+    setSelectedBrand(brand);
+    if (brand.source !== "brand") return;
+
+    try {
+      const detail = await loadBrandDetail(brand);
+      setSelectedBrand(detail);
+    } catch {
+      setSelectedBrand(brand);
+    }
   };
 
   const handleDeleteBrand = (brand: BrandDetail) => {
-    if (brand.source === "brand-account") return;
     setSelectedBrand(brand);
     setIsDeleteModalOpen(true);
   };
@@ -85,7 +91,11 @@ export const BrandView = () => {
   };
 
   const handleConfirmDelete = () => {
-    if (selectedBrand?.id) void suspendBrand(selectedBrand.id);
+    if (selectedBrand?.source === "brand-application") {
+      void rejectBrandApplication(selectedBrand.id);
+    } else if (selectedBrand?.source === "brand") {
+      void suspendBrand(selectedBrand.id);
+    }
     setIsDeleteModalOpen(false);
     setSelectedBrand(null);
   };
@@ -108,7 +118,6 @@ export const BrandView = () => {
           adminRole={String(profile?.role || "Admin")}
           unreadCount={0}
           onToggleMobileMenu={() => setIsMobileMenuOpen(true)}
-          onNotificationClick={() => router.push("/support")}
           onProfileClick={() => router.push("/settings")}
         />
 

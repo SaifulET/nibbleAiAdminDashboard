@@ -13,9 +13,6 @@ export const SettingsMenuList: React.FC<SettingsMenuListProps> = ({
   const menuItems: { id: SettingsSubTab; label: string }[] = [
     { id: "personal-info", label: "Personal Information" },
     { id: "change-password", label: "Change Password" },
-    { id: "terms", label: "Terms & Condition" },
-    { id: "privacy", label: "Privacy Policy" },
-    { id: "faq", label: "FAQ" },
   ];
 
   return (

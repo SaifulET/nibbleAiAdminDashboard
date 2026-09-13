@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useAdminApiStore } from "@/stores/useAdminApiStore";
 
 interface HeaderProps {
   adminName?: string;
@@ -19,6 +20,9 @@ export const Header: React.FC<HeaderProps> = ({
   onNotificationClick,
   onProfileClick,
 }) => {
+  const storeUnreadCount = useAdminApiStore((state) => state.unreadCount);
+  const visibleUnreadCount = Math.max(unreadCount, storeUnreadCount);
+
   return (
     <header className="w-full min-h-[78px] bg-white rounded-[16px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] px-4 sm:px-6 py-3 flex items-center justify-between gap-4 shrink-0 flex-wrap sm:flex-nowrap">
       {/* Left: Mobile Hamburger Button & Welcome Message */}
@@ -60,34 +64,35 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right Controls: Notifications & Profile */}
       <div className="flex items-center gap-4 sm:gap-6 ml-auto">
-        {/* Notification Bell */}
-        <button
-          type="button"
-          onClick={onNotificationClick}
-          className="relative cursor-pointer focus:outline-none"
-          title="Open support"
-        >
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#E0E0E0] flex items-center justify-center transition-colors hover:bg-[#D5D5D5]">
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#3E3EDF"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-          </div>
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#3E3EDF] text-white font-inter text-[12px] font-medium flex items-center justify-center shadow-sm">
-              {unreadCount}
-            </span>
-          )}
-        </button>
+        {onNotificationClick && (
+          <button
+            type="button"
+            onClick={onNotificationClick}
+            className="relative cursor-pointer focus:outline-none"
+            title="Open notifications"
+          >
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#E0E0E0] flex items-center justify-center transition-colors hover:bg-[#D5D5D5]">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#3E3EDF"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+            </div>
+            {visibleUnreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#3E3EDF] text-white font-inter text-[12px] font-medium flex items-center justify-center shadow-sm">
+                {visibleUnreadCount}
+              </span>
+            )}
+          </button>
+        )}
 
         {/* Profile Avatar & Info */}
         <button

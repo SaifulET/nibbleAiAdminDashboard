@@ -3,18 +3,19 @@ export interface BrandDetail {
   sl: string;
   brandName: string;
   name?: string;
+  legalName?: string;
+  slug?: string;
   email: string;
   number: string;
   date: string;
-  phoneNumber?: string;
-  address?: string;
-  joiningDate?: string;
-  category?: string;
-  productUrl?: string;
-  priceDiscount?: string;
+  website?: string;
+  logoUrl?: string;
+  planName?: string;
+  requestedPlan?: string;
+  decisionReason?: string;
   description?: string;
   status?: string;
-  source?: "brand" | "brand-account" | "brand-application";
+  source?: "brand" | "brand-application";
   canApprove?: boolean;
 }
 

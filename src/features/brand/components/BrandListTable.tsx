@@ -2,7 +2,6 @@
 
 import React from "react";
 import { BrandDetail } from "@/types/brand.types";
-import { BrandFilterBar } from "./BrandFilterBar";
 import { PaginationBar } from "@/features/earnings/components/PaginationBar";
 import { useClientPagination } from "@/hooks/useClientPagination";
 
@@ -30,13 +29,11 @@ export const BrandListTable: React.FC<BrandListTableProps> = ({
 
   return (
     <div className="w-full bg-[#FEFEFE] rounded-[8px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] p-4 sm:p-6 flex flex-col gap-6 overflow-hidden">
-      {/* Top Header: Title + Pill Filter Bar */}
-      <div className="w-full flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      {/* Top Header */}
+      <div className="w-full flex items-center justify-between gap-4">
         <h2 className="font-inter text-[20px] font-medium leading-[24px] text-[#1F1D1D]">
           Brand List
         </h2>
-
-        <BrandFilterBar />
       </div>
 
       {/* Table Container */}
@@ -116,9 +113,12 @@ export const BrandListTable: React.FC<BrandListTableProps> = ({
                     <button
                       type="button"
                       onClick={() => onDeleteBrand && onDeleteBrand(bnd)}
-                      disabled={bnd.source === "brand-account"}
                       className="inline-flex items-center justify-center w-8 h-8 text-[#FF5C5C] hover:bg-[#FF5C5C]/10 rounded-full transition-colors cursor-pointer"
-                      aria-label={`Delete brand ${bnd.brandName}`}
+                      aria-label={
+                        bnd.source === "brand-application"
+                          ? `Reject brand application ${bnd.brandName}`
+                          : `Delete brand ${bnd.brandName}`
+                      }
                     >
                       <svg
                         width="20"

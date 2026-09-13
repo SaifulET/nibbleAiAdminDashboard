@@ -37,6 +37,17 @@ const readError = (error: unknown) =>
       ? error.message
       : "Something went wrong.";
 
+const roleValue = (profile: ApiRecord | null | undefined) =>
+  String(profile?.role ?? "").trim().toLowerCase();
+
+const isPlatformAdminProfile = (profile: ApiRecord | null | undefined) =>
+  roleValue(profile) === "admin" ||
+  profile?.is_staff === true ||
+  profile?.is_superuser === true;
+
+const adminAccessError =
+  "This account is not an admin account. Please use the correct portal for this user.";
+
 const dateText = (value: unknown) =>
   typeof value === "string" ? new Date(value).toLocaleDateString() : "";
 
@@ -67,28 +78,21 @@ const mapBrand = (item: ApiRecord, index: number): BrandDetail => ({
   sl: String(index + 1),
   brandName: String(item.name ?? item.brand_name ?? "Unknown brand"),
   name: String(item.name ?? item.brand_name ?? ""),
-  email: String(item.email ?? item.owner_email ?? ""),
-  number: String(item.phone ?? item.phone_number ?? ""),
+  legalName: String(item.legal_name ?? ""),
+  slug: String(item.slug ?? ""),
+  email: String(item.contact_email ?? item.email ?? item.owner_email ?? ""),
+  number: "",
   date: dateText(item.created_at),
-  category: String(item.category ?? ""),
-  productUrl: String(item.website ?? ""),
+  website: String(item.website ?? ""),
+  logoUrl: String(item.logo_url ?? item.logo ?? ""),
+  planName:
+    item.plan && typeof item.plan === "object"
+      ? String((item.plan as ApiRecord).name ?? (item.plan as ApiRecord).slug ?? "")
+      : "",
   description: String(item.description ?? ""),
   status: String(item.status ?? "active"),
   source: "brand",
   canApprove: false,
-});
-
-const mapBrandAccount = (item: ApiRecord, index: number): BrandDetail => ({
-  id: String(item.id ?? index),
-  sl: String(index + 1),
-  brandName: String(item.full_name ?? item.email ?? "Pending brand account"),
-  name: String(item.full_name ?? ""),
-  email: String(item.email ?? ""),
-  number: String(item.phone ?? item.phone_number ?? ""),
-  date: dateText(item.created_at),
-  status: "pending approval",
-  source: "brand-account",
-  canApprove: true,
 });
 
 const mapBrandApplication = (item: ApiRecord, index: number): BrandDetail => ({
@@ -99,7 +103,14 @@ const mapBrandApplication = (item: ApiRecord, index: number): BrandDetail => ({
   email: String(item.contact_email ?? ""),
   number: "",
   date: dateText(item.created_at),
-  productUrl: String(item.website ?? ""),
+  website: String(item.website ?? ""),
+  requestedPlan:
+    typeof item.requested_plan === "string"
+      ? item.requested_plan
+      : item.requested_plan && typeof item.requested_plan === "object"
+        ? String((item.requested_plan as ApiRecord).name ?? (item.requested_plan as ApiRecord).slug ?? "")
+        : "",
+  decisionReason: String(item.decision_reason ?? ""),
   description: String(item.message ?? ""),
   status: "pending approval",
   source: "brand-application",
@@ -108,18 +119,14 @@ const mapBrandApplication = (item: ApiRecord, index: number): BrandDetail => ({
 
 const mergeBrandRows = (
   brandList: ApiRecord[],
-  userList: ApiRecord[],
   applicationList: ApiRecord[] = []
 ): BrandDetail[] => {
   const activeBrands = brandList.map(mapBrand);
   const pendingApplications = applicationList
     .filter((item) => String(item.status ?? "").toLowerCase() === "pending")
     .map((item, index) => mapBrandApplication(item, activeBrands.length + index));
-  const pendingBrandAccounts = userList
-    .filter((item) => String(item.role ?? "").toLowerCase() === "brand" && item.is_approved === false)
-    .map((item, index) => mapBrandAccount(item, activeBrands.length + pendingApplications.length + index));
 
-  return [...pendingApplications, ...pendingBrandAccounts, ...activeBrands].map((brand, index) => ({
+  return [...pendingApplications, ...activeBrands].map((brand, index) => ({
     ...brand,
     sl: String(index + 1),
   }));
@@ -203,6 +210,7 @@ interface AdminApiState {
   transactions: TransactionDetail[];
   monthlyEarnings: MonthlyEarning[];
   stats: StatCardData[];
+  unreadCount: number;
   status: LoadState;
   error: string | null;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
@@ -212,6 +220,7 @@ interface AdminApiState {
   loadDashboard: () => Promise<void>;
   loadUsers: () => Promise<void>;
   loadBrands: () => Promise<void>;
+  loadBrandDetail: (brand: BrandDetail) => Promise<BrandDetail>;
   loadWithdrawals: () => Promise<void>;
   loadTransactions: () => Promise<void>;
   updateProfile: (body: ApiRecord | FormData) => Promise<void>;
@@ -222,6 +231,7 @@ interface AdminApiState {
   suspendBrand: (brandId: string) => Promise<void>;
   reactivateBrand: (brandId: string) => Promise<void>;
   approveBrand: (brand: BrandDetail) => Promise<void>;
+  rejectBrandApplication: (applicationId: string) => Promise<void>;
 }
 
 export const useAdminApiStore = create<AdminApiState>()(
@@ -237,6 +247,7 @@ export const useAdminApiStore = create<AdminApiState>()(
       transactions: [],
       monthlyEarnings: [],
       stats: [],
+      unreadCount: 0,
       status: "idle",
       error: null,
       login: async (email, password, rememberMe = false) => {
@@ -245,6 +256,15 @@ export const useAdminApiStore = create<AdminApiState>()(
           const tokens = await nibblApi.login({ email, password, remember_me: rememberMe });
           tokenStorage.set(tokens.access, tokens.refresh);
           const profile = await nibblApi.me();
+          if (!isPlatformAdminProfile(profile)) {
+            tokenStorage.clear();
+            set({
+              accessToken: null,
+              refreshToken: null,
+              profile: null,
+            });
+            throw new Error(adminAccessError);
+          }
           set({
             accessToken: tokens.access,
             refreshToken: tokens.refresh,
@@ -270,8 +290,20 @@ export const useAdminApiStore = create<AdminApiState>()(
         if (!tokenStorage.getAccess() && !state.refreshToken) return;
 
         try {
-          const profile = await nibblApi.me();
-          set({ profile, error: null });
+          const [profile, unread] = await Promise.all([
+            nibblApi.me(),
+            apiClient.request<ApiRecord>(backendApi.consumer.unreadCount),
+          ]);
+          if (!isPlatformAdminProfile(profile)) {
+            get().logout();
+            set({ status: "error", error: adminAccessError });
+            return;
+          }
+          set({
+            profile,
+            unreadCount: Number(unread.unread_count || 0),
+            error: null,
+          });
         } catch (error) {
           const hasProfile = Boolean(get().profile);
           if (error instanceof ApiError && error.status === 401) {
@@ -292,13 +324,20 @@ export const useAdminApiStore = create<AdminApiState>()(
 
         set({ status: "loading", error: null });
         try {
-          const [profile, overview, users, brands, applications, transactions] = await Promise.all([
-            nibblApi.me(),
+          const profile = await nibblApi.me();
+          if (!isPlatformAdminProfile(profile)) {
+            get().logout();
+            set({ status: "error", error: adminAccessError });
+            return;
+          }
+
+          const [overview, users, brands, applications, transactions, unread] = await Promise.all([
             apiClient.request<ApiRecord>(backendApi.admin.analyticsOverview),
             apiClient.request<unknown>(backendApi.admin.users),
             apiClient.request<unknown>(backendApi.admin.brands),
             apiClient.request<unknown>(backendApi.admin.brandApplications),
             apiClient.request<unknown>(backendApi.admin.transactions),
+            apiClient.request<ApiRecord>(backendApi.consumer.unreadCount),
           ]);
           const userList = listResults(users);
           const brandList = listResults(brands);
@@ -308,9 +347,10 @@ export const useAdminApiStore = create<AdminApiState>()(
             profile,
             overview,
             users: userList.map(mapUser),
-            brands: mergeBrandRows(brandList, userList, applicationList),
+            brands: mergeBrandRows(brandList, applicationList),
             transactions: transactionList.map(mapTransaction),
             monthlyEarnings: mapMonthlyEarnings(transactionList),
+            unreadCount: Number(unread.unread_count || 0),
             stats: [
               { id: "earnings", title: "Total Earnings", value: money(parseMoney(overview.total_fees) + parseMoney(overview.subscription)) },
               { id: "users", title: "Total Users", value: String(overview.users_total ?? userList.length) },
@@ -327,12 +367,19 @@ export const useAdminApiStore = create<AdminApiState>()(
         set({ users: listResults(response).map(mapUser) });
       },
       loadBrands: async () => {
-        const [brands, users, applications] = await Promise.all([
+        const [brands, applications] = await Promise.all([
           apiClient.request<unknown>(backendApi.admin.brands),
-          apiClient.request<unknown>(backendApi.admin.users),
           apiClient.request<unknown>(backendApi.admin.brandApplications),
         ]);
-        set({ brands: mergeBrandRows(listResults(brands), listResults(users), listResults(applications)) });
+        set({ brands: mergeBrandRows(listResults(brands), listResults(applications)) });
+      },
+      loadBrandDetail: async (brand) => {
+        if (brand.source !== "brand") return brand;
+        const response = await apiClient.request<ApiRecord>(backendApi.brand.brandDetail(brand.id));
+        return {
+          ...mapBrand(response, Number(brand.sl) - 1),
+          sl: brand.sl,
+        };
       },
       loadWithdrawals: async () => {
         const response = await apiClient.request<unknown>(backendApi.admin.withdrawals);
@@ -408,9 +455,11 @@ export const useAdminApiStore = create<AdminApiState>()(
       approveBrand: async (brand) => {
         if (brand.source === "brand-application") {
           await apiClient.request(backendApi.admin.approveBrandApplication(brand.id));
-        } else if (brand.source === "brand-account") {
-          await apiClient.request(backendApi.admin.approveBrandAccount(brand.id));
         }
+        await get().loadBrands();
+      },
+      rejectBrandApplication: async (applicationId) => {
+        await apiClient.request(backendApi.admin.rejectBrandApplication(applicationId));
         await get().loadBrands();
       },
     }),

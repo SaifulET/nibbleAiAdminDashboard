@@ -7,9 +7,6 @@ import { SettingsSubTab, UserProfileData } from "@/types/settings.types";
 import { SettingsMenuList } from "../components/SettingsMenuList";
 import { PersonalInfoView } from "../components/PersonalInfoView";
 import { SettingsPasswordFlow } from "../components/SettingsPasswordFlow";
-import { TermsConditionView } from "../components/TermsConditionView";
-import { PrivacyPolicyView } from "../components/PrivacyPolicyView";
-import { FaqView } from "../components/FaqView";
 import { SidebarNavItem } from "@/types/dashboard.types";
 import { useRouter } from "next/navigation";
 import { useAdminApiStore } from "@/stores/useAdminApiStore";
@@ -76,9 +73,6 @@ export const SettingsView = () => {
       case "settings":
         router.push("/settings");
         break;
-      case "support":
-        router.push("/support");
-        break;
       case "logout":
         logout();
         router.push("/");
@@ -106,7 +100,6 @@ export const SettingsView = () => {
           adminRole={userProfile.role}
           unreadCount={0}
           onToggleMobileMenu={() => setIsMobileMenuOpen(true)}
-          onNotificationClick={() => router.push("/support")}
           onProfileClick={() => setActiveSubTab("personal-info")}
         />
 
@@ -148,17 +141,6 @@ export const SettingsView = () => {
           />
         )}
 
-        {activeSubTab === "terms" && (
-          <TermsConditionView onBack={() => setActiveSubTab("menu")} />
-        )}
-
-        {activeSubTab === "privacy" && (
-          <PrivacyPolicyView onBack={() => setActiveSubTab("menu")} />
-        )}
-
-        {activeSubTab === "faq" && (
-          <FaqView onBack={() => setActiveSubTab("menu")} />
-        )}
       </main>
     </div>
   );
