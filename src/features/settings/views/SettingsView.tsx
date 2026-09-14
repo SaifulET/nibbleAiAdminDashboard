@@ -13,6 +13,7 @@ import { TermsConditionView } from "../components/TermsConditionView";
 import { SidebarNavItem } from "@/types/dashboard.types";
 import { useRouter } from "next/navigation";
 import { useAdminApiStore } from "@/stores/useAdminApiStore";
+import { resolveBackendAssetUrl } from "@/lib/api/backendApi";
 
 const splitPhone = (value: unknown) => {
   const phone = typeof value === "string" ? value : "";
@@ -22,6 +23,13 @@ const splitPhone = (value: unknown) => {
     countryCode: code,
     phoneNumber: phone.startsWith(code) ? phone.slice(code.length) : phone,
   };
+};
+
+const buildPhone = (countryCode: string, phoneNumber: string) => {
+  const number = phoneNumber.trim();
+  if (!number) return "";
+  if (number.startsWith("+")) return number;
+  return `${countryCode}${number.replace(/^0+/, "")}`;
 };
 
 export const SettingsView = () => {
@@ -52,7 +60,7 @@ export const SettingsView = () => {
       countryCode: phone.countryCode,
       phoneNumber: phone.phoneNumber,
       role: String(profile?.role || "Admin"),
-      avatarUrl: String(profile?.avatar_url || profile?.avatar || ""),
+      avatarUrl: resolveBackendAssetUrl(profile?.avatar_url || profile?.avatar),
     };
   }, [profile]);
 
@@ -96,11 +104,12 @@ export const SettingsView = () => {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 w-full min-h-screen p-4 sm:p-6 md:p-8 flex flex-col gap-6 items-stretch bg-[#FEFEFE] overflow-x-hidden">
+      <main className="flex-1 min-w-0 w-full min-h-screen p-4 sm:p-6 md:p-8 flex flex-col gap-6 items-stretch bg-[#FEFEFE] overflow-x-hidden">
         {/* Header */}
         <Header
           adminName={userProfile.name}
           adminRole={userProfile.role}
+          adminAvatarUrl={userProfile.avatarUrl}
           unreadCount={0}
           onToggleMobileMenu={() => setIsMobileMenuOpen(true)}
           onProfileClick={() => setActiveSubTab("personal-info")}
@@ -117,18 +126,19 @@ export const SettingsView = () => {
             initialProfile={userProfile}
             onBack={() => setActiveSubTab("menu")}
             onSaveProfile={async (updated, avatarFile) => {
-              const phone = `${updated.countryCode}${updated.phoneNumber}`.trim();
+              const phone = buildPhone(updated.countryCode, updated.phoneNumber);
               if (avatarFile) {
                 const form = new FormData();
-                form.append("full_name", updated.name);
+                form.append("full_name", updated.name.trim());
                 if (phone) form.append("phone", phone);
                 form.append("avatar", avatarFile);
                 await updateProfile(form);
               } else {
-                await updateProfile({
-                  full_name: updated.name,
-                  phone,
-                });
+                const payload: Record<string, string | null> = {
+                  full_name: updated.name.trim(),
+                };
+                payload.phone = phone || null;
+                await updateProfile(payload);
               }
             }}
           />

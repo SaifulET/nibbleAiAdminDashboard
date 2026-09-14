@@ -27,6 +27,27 @@ export const API_BASE_URL = normalizeBaseUrl(
   process.env.NEXT_PUBLIC_NIBBLAI_API_BASE_URL
 );
 
+export const resolveBackendAssetUrl = (value: unknown) => {
+  if (typeof value !== "string" || !value.trim()) return "";
+
+  const path = value.trim();
+  if (
+    path.startsWith("http://") ||
+    path.startsWith("https://") ||
+    path.startsWith("blob:") ||
+    path.startsWith("data:")
+  ) {
+    return path;
+  }
+
+  if (path.startsWith("/")) {
+    const apiRoot = API_BASE_URL.replace(/\/api\/v1$/, "");
+    return `${apiRoot}${path}`;
+  }
+
+  return path;
+};
+
 export const backendApi = {
   common: {
     health: { method: "GET", path: "/health/", auth: false },

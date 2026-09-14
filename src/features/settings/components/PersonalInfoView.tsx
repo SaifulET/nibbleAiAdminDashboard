@@ -137,7 +137,6 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
   },
   onSaveProfile,
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState<UserProfileData>(initialProfile);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -158,12 +157,24 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveError("");
+
+    if (!profile.name.trim()) {
+      setSaveError("Name is required.");
+      return;
+    }
+
     setIsSaving(true);
 
     try {
-      await onSaveProfile?.(profile, avatarFile);
+      await onSaveProfile?.(
+        {
+          ...profile,
+          name: profile.name.trim(),
+          phoneNumber: profile.phoneNumber.trim(),
+        },
+        avatarFile
+      );
       setAvatarFile(null);
-      setIsEditing(false);
       setSavedSuccessMsg(true);
 
       window.setTimeout(() => {
@@ -177,7 +188,7 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
   };
 
   return (
-    <div className="w-full flex flex-col gap-6 font-inter">
+    <div className="w-full min-w-0 flex flex-col gap-6 font-inter">
       {/* Hidden File Input for Avatar */}
       <input
         id="personal-info-avatar-input"
@@ -188,11 +199,11 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
       />
 
       {/* Top Header Row */}
-      <div className="w-full flex items-center justify-between">
+      <div className="w-full min-w-0 flex flex-wrap items-center justify-between gap-4">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-3 text-[20px] sm:text-[24px] font-medium text-[#1F1D1D] hover:text-[#3E3EDF] transition-colors cursor-pointer"
+          className="flex min-w-0 items-center gap-3 text-[20px] sm:text-[24px] font-medium text-[#1F1D1D] hover:text-[#3E3EDF] transition-colors cursor-pointer"
         >
           <svg
             width="24"
@@ -207,40 +218,17 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
             <line x1="19" y1="12" x2="5" y2="12" />
             <polyline points="12 19 5 12 12 5" />
           </svg>
-          <span>Personal Information</span>
+          <span className="truncate">Personal Information</span>
         </button>
 
-        {isEditing ? (
-          <button
-            type="submit"
-            form="personal-info-form"
-            disabled={isSaving}
-            className="h-[44px] px-6 bg-[#3E3EDF] hover:bg-[#3232C7] disabled:opacity-60 text-white font-medium rounded-[8px] shadow-md transition-colors cursor-pointer"
-          >
-            {isSaving ? "Saving..." : "Save Change"}
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setIsEditing(true)}
-            className="h-[44px] px-6 bg-[#3E3EDF] hover:bg-[#3232C7] text-white font-medium rounded-[8px] shadow-md transition-colors cursor-pointer flex items-center gap-2"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-            <span>Edit Profile</span>
-          </button>
-        )}
+        <button
+          type="submit"
+          form="personal-info-form"
+          disabled={isSaving}
+          className="h-[44px] shrink-0 px-6 bg-[#3E3EDF] hover:bg-[#3232C7] disabled:opacity-60 text-white font-medium rounded-[8px] shadow-md transition-colors cursor-pointer"
+        >
+          {isSaving ? "Saving..." : "Save Changes"}
+        </button>
       </div>
 
       {/* Success Notification Banner */}
@@ -281,65 +269,46 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
       <form
         id="personal-info-form"
         onSubmit={handleSave}
-        className="w-full flex flex-col md:flex-row gap-8 items-start pt-2"
+        className="w-full min-w-0 flex flex-col md:flex-row gap-8 items-start pt-2"
       >
         {/* Left Profile Card */}
         <div className="w-full md:w-[280px] bg-[#FEFEFE] border border-[#3E3EDF] rounded-[16px] p-8 flex flex-col items-center justify-center gap-4 shrink-0 shadow-xs">
           {/* Avatar Container */}
-          {isEditing ? (
-            <label
-              htmlFor="personal-info-avatar-input"
-              className="relative w-28 h-28 rounded-full border-2 border-[#3E3EDF] overflow-hidden bg-gradient-to-br from-amber-500 to-red-600 flex items-center justify-center text-white text-3xl font-bold cursor-pointer group shadow-inner"
-              title="Click to upload profile photo"
-            >
-              {avatarPreview || profile.avatarUrl ? (
-                <Image
-                  src={avatarPreview || profile.avatarUrl || ""}
-                  alt="Profile Avatar"
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              ) : (
-                <span className="select-none">
-                  {profile.name.slice(0, 1).toUpperCase()}
-                </span>
-              )}
+          <label
+            htmlFor="personal-info-avatar-input"
+            className="relative w-28 h-28 rounded-full border-2 border-[#3E3EDF] overflow-hidden bg-gradient-to-br from-amber-500 to-red-600 flex items-center justify-center text-white text-3xl font-bold cursor-pointer group shadow-inner"
+            title="Change profile photo"
+          >
+            {avatarPreview || profile.avatarUrl ? (
+              <Image
+                src={avatarPreview || profile.avatarUrl || ""}
+                alt="Profile Avatar"
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            ) : (
+              <span className="select-none">
+                {profile.name.slice(0, 1).toUpperCase()}
+              </span>
+            )}
 
-              {/* Camera Overlay in Edit Mode */}
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-90 group-hover:opacity-100 transition-opacity">
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#FEFEFE"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                  <circle cx="12" cy="13" r="4" />
-                </svg>
-              </div>
-            </label>
-          ) : (
-            <div className="relative w-28 h-28 rounded-full border-2 border-[#3E3EDF] overflow-hidden bg-gradient-to-br from-amber-500 to-red-600 flex items-center justify-center text-white text-3xl font-bold shadow-inner">
-              {avatarPreview || profile.avatarUrl ? (
-                <Image
-                  src={avatarPreview || profile.avatarUrl || ""}
-                  alt="Profile Avatar"
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              ) : (
-                <span className="select-none">
-                  {profile.name.slice(0, 1).toUpperCase()}
-                </span>
-              )}
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#FEFEFE"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
             </div>
-          )}
+          </label>
 
           <div className="flex flex-col items-center">
             <span className="text-[#575757] text-[14px]">Profile</span>
@@ -350,7 +319,7 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
         </div>
 
         {/* Right Form Inputs */}
-        <div className="flex-1 w-full flex flex-col gap-6">
+        <div className="flex-1 min-w-0 w-full flex flex-col gap-6">
           {/* Name Field */}
           <div className="flex flex-col gap-2">
             <label className="text-[14px] font-medium text-[#575757]">
@@ -359,12 +328,11 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
             <div className="w-full h-[56px] px-4 bg-[#FEFEFE] border border-[#3E3EDF] rounded-[8px] flex items-center focus-within:border-[#3E3EDF]">
               <input
                 type="text"
-                disabled={!isEditing}
                 value={profile.name}
                 onChange={(e) =>
                   setProfile({ ...profile, name: e.target.value })
                 }
-                className="w-full bg-transparent outline-none text-[16px] text-[#1F1D1D] disabled:opacity-90"
+                className="w-full bg-transparent outline-none text-[16px] text-[#1F1D1D]"
               />
             </div>
           </div>
@@ -390,61 +358,53 @@ export const PersonalInfoView: React.FC<PersonalInfoViewProps> = ({
             <label className="text-[14px] font-medium text-[#575757]">
               Phone Number
             </label>
-            <div className="w-full flex items-center gap-3">
+            <div className="w-full min-w-0 flex flex-col gap-3 sm:flex-row sm:items-center">
               {/* Graphic SVG Flag + Country Code Box */}
-              {isEditing ? (
-                <div className="relative h-[56px] min-w-[130px] px-3 bg-[#3E3EDF] text-white rounded-[8px] flex items-center justify-between gap-2 shrink-0 font-medium text-[15px] shadow-xs">
-                  {renderFlagIcon(profile.countryCode)}
+              <div className="relative h-[56px] w-full px-3 bg-[#3E3EDF] text-white rounded-[8px] flex items-center justify-between gap-2 shrink-0 font-medium text-[15px] shadow-xs sm:w-[238px]">
+                {renderFlagIcon(profile.countryCode)}
 
-                  <select
-                    value={profile.countryCode}
-                    onChange={(e) =>
-                      setProfile({ ...profile, countryCode: e.target.value })
-                    }
-                    className="appearance-none bg-transparent outline-none text-white cursor-pointer font-medium pr-5 w-full z-10"
-                  >
-                    {countryCodes.map((c) => (
-                      <option
-                        key={c.code}
-                        value={c.code}
-                        className="text-gray-900 bg-white py-2"
-                      >
-                        {c.code} ({c.country})
-                      </option>
-                    ))}
-                  </select>
+                <select
+                  value={profile.countryCode}
+                  onChange={(e) =>
+                    setProfile({ ...profile, countryCode: e.target.value })
+                  }
+                  className="appearance-none bg-transparent outline-none text-white cursor-pointer font-medium pr-5 w-full z-10"
+                >
+                  {countryCodes.map((c) => (
+                    <option
+                      key={c.code}
+                      value={c.code}
+                      className="text-gray-900 bg-white py-2"
+                    >
+                      {c.code} ({c.country})
+                    </option>
+                  ))}
+                </select>
 
-                  <svg
-                    className="w-4 h-4 text-white pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M19 9l-7 7-7-7"
-                    />
-                  </svg>
-                </div>
-              ) : (
-                <div className="h-[56px] px-4 bg-[#3E3EDF] text-white rounded-[8px] flex items-center gap-2.5 shrink-0 font-medium text-[15px] shadow-xs">
-                  {renderFlagIcon(profile.countryCode)}
-                  <span>{profile.countryCode}</span>
-                </div>
-              )}
+                <svg
+                  className="w-4 h-4 text-white pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
 
               {/* Number Input */}
-              <div className="flex-1 h-[56px] px-4 bg-[#FEFEFE] border border-[#3E3EDF] rounded-[8px] flex items-center focus-within:border-[#3E3EDF]">
+              <div className="flex-1 min-w-0 h-[56px] px-4 bg-[#FEFEFE] border border-[#3E3EDF] rounded-[8px] flex items-center focus-within:border-[#3E3EDF]">
                 <input
                   type="text"
-                  disabled={!isEditing}
                   value={profile.phoneNumber}
                   onChange={(e) =>
                     setProfile({ ...profile, phoneNumber: e.target.value })
                   }
-                  className="w-full bg-transparent outline-none text-[16px] text-[#1F1D1D] disabled:opacity-90"
+                  className="w-full bg-transparent outline-none text-[16px] text-[#1F1D1D]"
                 />
               </div>
             </div>

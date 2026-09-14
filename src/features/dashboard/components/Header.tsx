@@ -1,11 +1,14 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { useAdminApiStore } from "@/stores/useAdminApiStore";
+import { resolveBackendAssetUrl } from "@/lib/api/backendApi";
 
 interface HeaderProps {
   adminName?: string;
   adminRole?: string;
+  adminAvatarUrl?: string;
   unreadCount?: number;
   onToggleMobileMenu?: () => void;
   onNotificationClick?: () => void;
@@ -15,16 +18,21 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   adminName = "Admin",
   adminRole = "Admin",
+  adminAvatarUrl = "",
   unreadCount = 0,
   onToggleMobileMenu,
   onNotificationClick,
   onProfileClick,
 }) => {
   const storeUnreadCount = useAdminApiStore((state) => state.unreadCount);
+  const storeProfile = useAdminApiStore((state) => state.profile);
   const visibleUnreadCount = Math.max(unreadCount, storeUnreadCount);
+  const visibleAvatarUrl =
+    adminAvatarUrl ||
+    resolveBackendAssetUrl(storeProfile?.avatar_url || storeProfile?.avatar);
 
   return (
-    <header className="w-full min-h-[78px] bg-white rounded-[16px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] px-4 sm:px-6 py-3 flex items-center justify-between gap-4 shrink-0 flex-wrap sm:flex-nowrap">
+    <header className="w-full min-w-0 min-h-[78px] bg-white rounded-[16px] shadow-[0px_2px_8px_rgba(0,0,0,0.1)] px-4 sm:px-6 py-3 flex items-center justify-between gap-4 shrink-0 flex-wrap sm:flex-nowrap">
       {/* Left: Mobile Hamburger Button & Welcome Message */}
       <div className="flex items-center gap-3">
         {/* Mobile Menu Toggle Button */}
@@ -98,19 +106,29 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           type="button"
           onClick={onProfileClick}
-          className="flex items-center gap-3 rounded-[10px] p-1 transition-colors hover:bg-[#3E3EDF]/5 focus:outline-none"
+          className="flex min-w-0 items-center gap-3 rounded-[10px] p-1 transition-colors hover:bg-[#3E3EDF]/5 focus:outline-none"
           title="Open settings"
         >
           {/* Avatar Circle */}
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-[#3E3EDF] bg-gradient-to-br from-[#3E3EDF]/20 to-[#3E3EDF]/40 flex items-center justify-center font-inter font-semibold text-[#3E3EDF] text-base sm:text-lg overflow-hidden shrink-0">
-            {adminName.slice(0, 2).toUpperCase()}
+          <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-[#3E3EDF] bg-gradient-to-br from-[#3E3EDF]/20 to-[#3E3EDF]/40 flex items-center justify-center font-inter font-semibold text-[#3E3EDF] text-base sm:text-lg overflow-hidden shrink-0">
+            {visibleAvatarUrl ? (
+              <Image
+                src={visibleAvatarUrl}
+                alt={`${adminName} profile`}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            ) : (
+              adminName.slice(0, 2).toUpperCase()
+            )}
           </div>
 
-          <div className="hidden sm:flex flex-col justify-center">
-            <span className="font-inter text-[16px] font-normal leading-[19px] text-[#575757]">
+          <div className="hidden min-w-0 sm:flex flex-col justify-center">
+            <span className="max-w-[140px] truncate font-inter text-[16px] font-normal leading-[19px] text-[#575757]">
               {adminName}
             </span>
-            <span className="font-inter text-[14px] font-normal leading-[17px] text-[#575757]">
+            <span className="max-w-[140px] truncate font-inter text-[14px] font-normal leading-[17px] text-[#575757]">
               {adminRole}
             </span>
           </div>
