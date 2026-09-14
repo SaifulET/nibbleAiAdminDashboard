@@ -1,20 +1,23 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 
 interface RichTextEditorProps {
   initialValue: string;
-  onSave: (newValue: string) => void;
+  onSave: (newValue: string) => void | Promise<void>;
+  isSaving?: boolean;
 }
 
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   initialValue,
   onSave,
+  isSaving = false,
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
-    if (editorRef.current && !editorRef.current.innerHTML) {
+    if (editorRef.current) {
       editorRef.current.innerHTML = initialValue.replace(/\n/g, "<br/>");
     }
   }, [initialValue]);
@@ -26,11 +29,18 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     document.execCommand(command, false, value);
   };
 
-  const handleUpdate = () => {
-    if (editorRef.current) {
-      onSave(editorRef.current.innerHTML);
+  const handleUpdate = async () => {
+    if (!editorRef.current) return;
+
+    setIsUpdating(true);
+    try {
+      await onSave(editorRef.current.innerHTML);
+    } finally {
+      setIsUpdating(false);
     }
   };
+
+  const saving = isSaving || isUpdating;
 
   return (
     <div className="w-full flex flex-col gap-6 font-inter">
@@ -161,9 +171,10 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         <button
           type="button"
           onClick={handleUpdate}
-          className="h-[48px] px-12 bg-[#3E3EDF] hover:bg-[#3232C7] text-white font-medium text-[16px] rounded-[8px] shadow-md transition-colors cursor-pointer"
+          disabled={saving}
+          className="h-[48px] px-12 bg-[#3E3EDF] hover:bg-[#3232C7] disabled:cursor-not-allowed disabled:opacity-60 text-white font-medium text-[16px] rounded-[8px] shadow-md transition-colors cursor-pointer"
         >
-          Update
+          {saving ? "Saving..." : "Update"}
         </button>
       </div>
     </div>

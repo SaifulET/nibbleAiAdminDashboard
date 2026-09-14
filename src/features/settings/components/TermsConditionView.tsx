@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { ApiError, ApiRecord, nibblApi } from "@/lib/api/backendApi";
 import { RichTextEditor } from "./RichTextEditor";
 
 interface TermsConditionViewProps {
@@ -10,12 +11,51 @@ interface TermsConditionViewProps {
 export const TermsConditionView: React.FC<TermsConditionViewProps> = ({
   onBack,
 }) => {
+  const [content, setContent] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-  const handleSave = () => {
-    setError(
-      "Terms cannot be saved yet because the backend has no terms content API. Required: GET/PATCH /api/v1/admin/content/terms/."
-    );
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadTerms = async () => {
+      setIsLoading(true);
+      setError("");
+      try {
+        const document = await nibblApi.adminTerms();
+        if (!cancelled) setContent(recordString(document, "content"));
+      } catch (loadError) {
+        if (!cancelled) setError(readError(loadError));
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    const timer = window.setTimeout(() => {
+      void loadTerms();
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, []);
+
+  const handleSave = async (newValue: string) => {
+    setIsSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const document = await nibblApi.updateAdminTerms(newValue);
+      setContent(recordString(document, "content"));
+      setMessage("Terms & Conditions updated.");
+    } catch (saveError) {
+      setError(readError(saveError));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -42,7 +82,33 @@ export const TermsConditionView: React.FC<TermsConditionViewProps> = ({
         </div>
       )}
 
-      <RichTextEditor initialValue="" onSave={handleSave} />
+      {message && (
+        <div className="rounded-[8px] border border-emerald-100 bg-emerald-50 px-4 py-3 text-[14px] font-medium text-emerald-700">
+          {message}
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="rounded-[12px] border border-gray-100 bg-white p-6 text-center text-[15px] leading-6 text-[#575757] shadow-[0px_2px_8px_rgba(0,0,0,0.06)]">
+          Loading terms...
+        </div>
+      ) : (
+        <RichTextEditor
+          initialValue={content}
+          onSave={handleSave}
+          isSaving={isSaving}
+        />
+      )}
     </div>
   );
 };
+
+const recordString = (record: ApiRecord, key: string) =>
+  typeof record[key] === "string" ? record[key] : "";
+
+const readError = (error: unknown) =>
+  error instanceof ApiError
+    ? error.message
+    : error instanceof Error
+      ? error.message
+      : "Something went wrong.";

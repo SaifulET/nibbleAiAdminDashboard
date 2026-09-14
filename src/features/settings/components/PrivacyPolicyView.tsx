@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { ApiError, ApiRecord, nibblApi } from "@/lib/api/backendApi";
 import { RichTextEditor } from "./RichTextEditor";
 
 interface PrivacyPolicyViewProps {
@@ -10,12 +11,51 @@ interface PrivacyPolicyViewProps {
 export const PrivacyPolicyView: React.FC<PrivacyPolicyViewProps> = ({
   onBack,
 }) => {
+  const [content, setContent] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-  const handleSave = () => {
-    setError(
-      "Privacy policy cannot be saved yet because the backend has no privacy content API. Required: GET/PATCH /api/v1/admin/content/privacy-policy/."
-    );
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPrivacyPolicy = async () => {
+      setIsLoading(true);
+      setError("");
+      try {
+        const document = await nibblApi.adminPrivacyPolicy();
+        if (!cancelled) setContent(recordString(document, "content"));
+      } catch (loadError) {
+        if (!cancelled) setError(readError(loadError));
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    const timer = window.setTimeout(() => {
+      void loadPrivacyPolicy();
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, []);
+
+  const handleSave = async (newValue: string) => {
+    setIsSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const document = await nibblApi.updateAdminPrivacyPolicy(newValue);
+      setContent(recordString(document, "content"));
+      setMessage("Privacy policy updated.");
+    } catch (saveError) {
+      setError(readError(saveError));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -42,7 +82,33 @@ export const PrivacyPolicyView: React.FC<PrivacyPolicyViewProps> = ({
         </div>
       )}
 
-      <RichTextEditor initialValue="" onSave={handleSave} />
+      {message && (
+        <div className="rounded-[8px] border border-emerald-100 bg-emerald-50 px-4 py-3 text-[14px] font-medium text-emerald-700">
+          {message}
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="rounded-[12px] border border-gray-100 bg-white p-6 text-center text-[15px] leading-6 text-[#575757] shadow-[0px_2px_8px_rgba(0,0,0,0.06)]">
+          Loading privacy policy...
+        </div>
+      ) : (
+        <RichTextEditor
+          initialValue={content}
+          onSave={handleSave}
+          isSaving={isSaving}
+        />
+      )}
     </div>
   );
 };
+
+const recordString = (record: ApiRecord, key: string) =>
+  typeof record[key] === "string" ? record[key] : "";
+
+const readError = (error: unknown) =>
+  error instanceof ApiError
+    ? error.message
+    : error instanceof Error
+      ? error.message
+      : "Something went wrong.";

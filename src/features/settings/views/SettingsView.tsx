@@ -7,6 +7,9 @@ import { SettingsSubTab, UserProfileData } from "@/types/settings.types";
 import { SettingsMenuList } from "../components/SettingsMenuList";
 import { PersonalInfoView } from "../components/PersonalInfoView";
 import { SettingsPasswordFlow } from "../components/SettingsPasswordFlow";
+import { FaqView } from "../components/FaqView";
+import { PrivacyPolicyView } from "../components/PrivacyPolicyView";
+import { TermsConditionView } from "../components/TermsConditionView";
 import { SidebarNavItem } from "@/types/dashboard.types";
 import { useRouter } from "next/navigation";
 import { useAdminApiStore } from "@/stores/useAdminApiStore";
@@ -139,6 +142,18 @@ export const SettingsView = () => {
             onForgotPassword={forgotPassword}
             onResetPassword={resetPassword}
           />
+        )}
+
+        {activeSubTab === "faq" && (
+          <FaqView onBack={() => setActiveSubTab("menu")} />
+        )}
+
+        {activeSubTab === "privacy-policy" && (
+          <PrivacyPolicyView onBack={() => setActiveSubTab("menu")} />
+        )}
+
+        {activeSubTab === "terms-conditions" && (
+          <TermsConditionView onBack={() => setActiveSubTab("menu")} />
         )}
 
       </main>

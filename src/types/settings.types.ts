@@ -1,7 +1,10 @@
 export type SettingsSubTab =
   | "menu"
   | "personal-info"
-  | "change-password";
+  | "change-password"
+  | "faq"
+  | "privacy-policy"
+  | "terms-conditions";
 
 export interface UserProfileData {
   name: string;

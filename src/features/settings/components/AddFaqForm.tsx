@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 
 export interface FaqItem {
-  id: string;
+  id?: string;
   question: string;
   answer: string;
 }
@@ -11,7 +11,7 @@ export interface FaqItem {
 interface AddFaqFormProps {
   initialFaq?: FaqItem | null;
   onBack: () => void;
-  onConfirm: (faq: { question: string; answer: string; id?: string }) => void;
+  onConfirm: (faq: { question: string; answer: string; id?: string }) => void | Promise<void>;
 }
 
 export const AddFaqForm: React.FC<AddFaqFormProps> = ({
@@ -21,15 +21,21 @@ export const AddFaqForm: React.FC<AddFaqFormProps> = ({
 }) => {
   const [question, setQuestion] = useState(initialFaq?.question || "");
   const [answer, setAnswer] = useState(initialFaq?.answer || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!question.trim() || !answer.trim()) return;
-    onConfirm({
-      id: initialFaq?.id,
-      question,
-      answer,
-    });
+    setIsSubmitting(true);
+    try {
+      await onConfirm({
+        id: initialFaq?.id,
+        question: question.trim(),
+        answer: answer.trim(),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -99,9 +105,10 @@ export const AddFaqForm: React.FC<AddFaqFormProps> = ({
         {/* Confirm Button */}
         <button
           type="submit"
-          className="w-full h-[48px] bg-[#3E3EDF] hover:bg-[#3232C7] text-white font-medium text-[16px] rounded-[8px] transition-colors cursor-pointer shadow-md mt-2"
+          disabled={isSubmitting}
+          className="w-full h-[48px] bg-[#3E3EDF] hover:bg-[#3232C7] disabled:cursor-not-allowed disabled:opacity-60 text-white font-medium text-[16px] rounded-[8px] transition-colors cursor-pointer shadow-md mt-2"
         >
-          Confirm
+          {isSubmitting ? "Saving..." : "Confirm"}
         </button>
       </form>
     </div>
